@@ -318,22 +318,22 @@ PHP_METHOD( hyperclient, __construct ) {
   
   // Validate them, and throw an exception if there's an issue.
   if( NULL == host || 0 >= host_len ) {
-    zend_throw_exception( hyperclient_ce_exception, "Invalid host", 1001 TSRMLS_CC );
+    zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
   }
 
   if( 0 >= port || 65536 <= port ) {
-    zend_throw_exception( hyperclient_ce_exception, "Invalid port", 1001 TSRMLS_CC );
+    zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
   }
 
   // Now try to create the hyperclient (and connect). Throw an exception if there are errors.
   try {
     hdex = new hyperclient( host, port );
     if( NULL == hdex ) {
-      zend_throw_exception( hyperclient_ce_exception, "Unable to connect to HyperDex",1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
     }
   } catch( ... ) {
     hdex = NULL;
-    zend_throw_exception( hyperclient_ce_exception, "Unable to connect to HyperDex",1 TSRMLS_CC );
+    zend_throw_exception( hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
   }
   
   // If all is good, then set the PHP thread's storage object
@@ -367,12 +367,12 @@ PHP_METHOD( hyperclient, connect ) {
 
   // Validate them, and throw an exception if there's an issue.
   if( NULL == host || 0 >= host_len ) {
-    zend_throw_exception( hyperclient_ce_exception, "Invalid host", 1001 TSRMLS_CC );
+    zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
     RETURN_FALSE;
   }
 
   if( 0 >= port || 65536 <= port ) {
-    zend_throw_exception( hyperclient_ce_exception, "Invalid port", 1001 TSRMLS_CC );
+    zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
     RETURN_FALSE;
   }
   
@@ -390,12 +390,12 @@ PHP_METHOD( hyperclient, connect ) {
       hdex = new hyperclient( host, port );
       
       if( NULL == hdex ) {
-        zend_throw_exception(hyperclient_ce_exception, "Unable to connect to HyperDex",1 TSRMLS_CC);
+        zend_throw_exception(hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
       }
       
     } catch( ... ) {
       hdex = NULL;
-      zend_throw_exception(hyperclient_ce_exception, "Unable to connect to HyperDex",1 TSRMLS_CC);
+      zend_throw_exception(hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
     }
 
     // Push it back to the storage object, and return success.
@@ -508,7 +508,7 @@ PHP_METHOD( hyperclient, put ) {
       }
       
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "Set failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
     }
   }
   
@@ -582,7 +582,7 @@ PHP_METHOD( hyperclient, put_attr ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "Set_attr failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"Set_attr failed", 1 TSRMLS_CC );
     }
   }
 
@@ -713,7 +713,7 @@ PHP_METHOD( hyperclient, condput ) {
       }           
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "Set failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
     }
   }
 
@@ -798,7 +798,7 @@ PHP_METHOD( hyperclient, lpush ) {
         }
       }
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "lpush failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
     }
   }
   
@@ -877,7 +877,7 @@ PHP_METHOD(hyperclient,rpush) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "lpush failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
     }
   }
   
@@ -954,7 +954,7 @@ PHP_METHOD( hyperclient, set_add ) {
         }
       }
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "set_add failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1033,7 +1033,7 @@ PHP_METHOD( hyperclient, set_remove ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "set_add failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1119,7 +1119,7 @@ PHP_METHOD( hyperclient, set_union ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "set_add failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
     }
   }
 
@@ -1205,7 +1205,7 @@ PHP_METHOD( hyperclient, set_intersect ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "set_add failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
     }
   }
 
@@ -1284,7 +1284,7 @@ PHP_METHOD( hyperclient, add ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "add failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"add failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1363,7 +1363,7 @@ PHP_METHOD( hyperclient, sub ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "sub failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"sub failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1442,7 +1442,7 @@ PHP_METHOD( hyperclient, mul ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "mul failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1522,7 +1522,7 @@ PHP_METHOD( hyperclient, div ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "mul failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1602,7 +1602,7 @@ PHP_METHOD( hyperclient, mod ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "mul failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1682,7 +1682,7 @@ PHP_METHOD( hyperclient, and ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "mul failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1762,7 +1762,7 @@ PHP_METHOD( hyperclient, or ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "mul failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1842,7 +1842,7 @@ PHP_METHOD( hyperclient, xor ) {
       }
 
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "mul failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
   
@@ -1977,9 +1977,9 @@ PHP_METHOD( hyperclient, search ) {
       }
       
     } catch( int& e ) {     
-      zend_throw_exception( hyperclient_ce_exception, "Bad Range Check", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"Bad Range Check", 1 TSRMLS_CC );
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "Search failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"Search failed", 1 TSRMLS_CC );
     }
   }
 
@@ -2042,7 +2042,7 @@ PHP_METHOD( hyperclient, get ) {
         }
       }
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "get failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"get failed", 1 TSRMLS_CC );
     }
   }
   RETURN_FALSE;
@@ -2105,7 +2105,7 @@ PHP_METHOD( hyperclient, get_attr ) {
         }
       }
     } catch( ... ) {
-      zend_throw_exception( hyperclient_ce_exception, "get failed", 1 TSRMLS_CC );
+      zend_throw_exception( hyperclient_ce_exception, (char*)"get failed", 1 TSRMLS_CC );
     }
   }
 
@@ -2150,7 +2150,7 @@ PHP_METHOD( hyperclient, del ) {
       }
       
     } catch( ... ) {
-      zend_throw_exception(hyperclient_ce_exception, "delete failed", 1 TSRMLS_CC);
+      zend_throw_exception(hyperclient_ce_exception, (char*)"delete failed", 1 TSRMLS_CC);
     }
   }
 
@@ -2181,7 +2181,7 @@ int hyperdexLoop( hyperclient* hdex, int64_t op_id ) {
   
   if( op_id != loop_id ) {
     // This is most certainly a bug for this simple code.
-    zend_throw_exception( hyperclient_ce_exception, "Loop ID not equal Op ID", 2 TSRMLS_CC );
+    zend_throw_exception( hyperclient_ce_exception, (char*)"Loop ID not equal Op ID", 2 TSRMLS_CC );
     return -1;
   }   
 
@@ -3181,7 +3181,7 @@ void buildZvalFromAttr( hyperclient_attribute* attr, zval* data ) {
     byteArrayToMapInt64Float( (unsigned char*)attr->value, attr->value_sz, data );
     
   } else {
-    zend_throw_exception(hyperclient_ce_exception, "Unknown data type", attr->datatype TSRMLS_CC);
+    zend_throw_exception(hyperclient_ce_exception, (char*)"Unknown data type", attr->datatype TSRMLS_CC);
   }
 }
 
@@ -3216,7 +3216,7 @@ void buildRangeFromZval( zval* input, char* arr_key, hyperclient_range_query* rn
       
       if( cntr != 2 ) {
         // Error - The input array exactly 2 integers.
-        zend_throw_exception(hyperclient_ce_exception, "Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
+        zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
         throw -1;
       } else {
 
@@ -3227,13 +3227,13 @@ void buildRangeFromZval( zval* input, char* arr_key, hyperclient_range_query* rn
       
     } else {    
       // Error - The input array should contain all integers.
-      zend_throw_exception(hyperclient_ce_exception, "Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
+      zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
       throw -1;
     }
         
   } else {
     // The input *MUST* be an array.
-    zend_throw_exception(hyperclient_ce_exception, "Invalid range type", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
+    zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range type", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
     throw -1;
   }
     
@@ -3355,26 +3355,26 @@ char* HyperDexErrorToMsg( hyperclient_returncode code ) {
 
   switch( code ) {
     /* General Statuses */
-    case HYPERCLIENT_SUCCESS: return("Success");
-    case HYPERCLIENT_NOTFOUND: return("Not Found");
-    case HYPERCLIENT_SEARCHDONE: return("Search Done");
-    case HYPERCLIENT_CMPFAIL: return("Compare Failed");
-    case HYPERCLIENT_READONLY: return("Read Only");
+    case HYPERCLIENT_SUCCESS: return((char*)"Success");
+    case HYPERCLIENT_NOTFOUND: return((char*)"Not Found");
+    case HYPERCLIENT_SEARCHDONE: return((char*)"Search Done");
+    case HYPERCLIENT_CMPFAIL: return((char*)"Compare Failed");
+    case HYPERCLIENT_READONLY: return((char*)"Read Only");
 
     /* Error conditions */
-    case HYPERCLIENT_UNKNOWNSPACE: return("Unknown Space");
-    case HYPERCLIENT_COORDFAIL: return("Coordinator Failure");
-    case HYPERCLIENT_SERVERERROR: return("Server Error");
-    case HYPERCLIENT_POLLFAILED: return("Poll Failed");
-    case HYPERCLIENT_OVERFLOW: return("Overflow");
-    case HYPERCLIENT_RECONFIGURE: return("Reconfigure");
-    case HYPERCLIENT_TIMEOUT: return("Timeout");
-    case HYPERCLIENT_UNKNOWNATTR: return("Unknown Attribute");
-    case HYPERCLIENT_DUPEATTR: return("Duplicate Attribute");
-    case HYPERCLIENT_NONEPENDING: return("None Pending");
-    case HYPERCLIENT_DONTUSEKEY: return("Dont Use Key");
-    case HYPERCLIENT_WRONGTYPE: return("Wrong Attribute Type");
-    case HYPERCLIENT_NOMEM: return("Out of Memory");
+    case HYPERCLIENT_UNKNOWNSPACE: return((char*)"Unknown Space");
+    case HYPERCLIENT_COORDFAIL: return((char*)"Coordinator Failure");
+    case HYPERCLIENT_SERVERERROR: return((char*)"Server Error");
+    case HYPERCLIENT_POLLFAILED: return((char*)"Poll Failed");
+    case HYPERCLIENT_OVERFLOW: return((char*)"Overflow");
+    case HYPERCLIENT_RECONFIGURE: return((char*)"Reconfigure");
+    case HYPERCLIENT_TIMEOUT: return((char*)"Timeout");
+    case HYPERCLIENT_UNKNOWNATTR: return((char*)"Unknown Attribute");
+    case HYPERCLIENT_DUPEATTR: return((char*)"Duplicate Attribute");
+    case HYPERCLIENT_NONEPENDING: return((char*)"None Pending");
+    case HYPERCLIENT_DONTUSEKEY: return((char*)"Dont Use Key");
+    case HYPERCLIENT_WRONGTYPE: return((char*)"Wrong Attribute Type");
+    case HYPERCLIENT_NOMEM: return((char*)"Out of Memory");
   }
 }
 
