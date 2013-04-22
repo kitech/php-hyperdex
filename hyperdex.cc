@@ -32,6 +32,12 @@
 #include <zend_exceptions.h>
 #include <zend_operators.h>
 
+struct range_query_old
+{
+    const char* attr;
+    uint64_t lower;
+    uint64_t upper;
+};
 ZEND_DECLARE_MODULE_GLOBALS(hyperdex)
 
 /*
@@ -76,12 +82,14 @@ void int64StringHashToByteArray( zval* array, unsigned char** output_array, size
 
 
 void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, enum hyperdatatype expected_type = HYPERDATATYPE_STRING );
-void buildRangeFromZval( zval* input, char* arr_key, hyperclient_range_query* rng_q );
+void buildAttrCheckFromZval( zval* data, char* arr_key, hyperclient_attribute_check* attr, int arrpos, enum hyperpredicate pred, enum hyperdatatype expected_type= HYPERDATATYPE_STRING);
+void buildRangeFromZval( zval* input, char* arr_key, range_query_old* rng_q );
 
 void buildArrayFromAttrs( hyperclient_attribute* attr, size_t attrs_sz, zval* data );
 void buildZvalFromAttr( hyperclient_attribute* attr, zval* data );
 
 void freeAttrVals( hyperclient_attribute *attr, int len );
+void freeAttrCheckVals( hyperclient_attribute_check *attr, int len );
 
 int isArrayAllLong( zval* array );
 int isArrayAllDouble( zval* array );
@@ -97,7 +105,8 @@ static int php_array_number_compare(const void *a, const void *b TSRMLS_DC);
  */
 struct hyperclient_object {
   zend_object  std;
-  hyperclient* hdex = NULL;
+  hyperclient* hdex;
+  hyperclient_object() : hdex(NULL) {}
 };
 
 /* {{{ hyperdex_functions[]
@@ -106,10 +115,10 @@ struct hyperclient_object {
  */
 static zend_function_entry hyperdex_functions[] = {
     PHP_ME(hyperclient, __construct,                NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR )
-    PHP_ME(hyperclient, __destruct,                 NULL, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR ) 
+    PHP_ME(hyperclient, __destruct,                 NULL, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR )
     PHP_ME(hyperclient, connect,                 	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, disconnect,              	NULL, ZEND_ACC_PUBLIC )
-    
+
     PHP_ME(hyperclient, put,                      	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, put_attr,                 	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, condput,                  	NULL, ZEND_ACC_PUBLIC )
@@ -121,7 +130,7 @@ static zend_function_entry hyperdex_functions[] = {
     PHP_ME(hyperclient, set_remove,                	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, set_union,                 NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, set_intersect,                 NULL, ZEND_ACC_PUBLIC )
-    
+
     PHP_ME(hyperclient, add,                    	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, sub,                    	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, mul,                    	NULL, ZEND_ACC_PUBLIC )
@@ -130,11 +139,11 @@ static zend_function_entry hyperdex_functions[] = {
     PHP_ME(hyperclient, and,                    	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, or,                      	NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, xor,                    	NULL, ZEND_ACC_PUBLIC )
-    
+
     PHP_ME(hyperclient, search,                     NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, get,	                    NULL, ZEND_ACC_PUBLIC )
     PHP_ME(hyperclient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
-    
+
     PHP_ME(hyperclient, del,                     	NULL, ZEND_ACC_PUBLIC )	
     PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
@@ -166,7 +175,7 @@ ZEND_GET_MODULE(hyperdex)
 
 /* {{{ PHP_INI
  */
-PHP_INI_BEGIN()    
+PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
@@ -174,11 +183,11 @@ PHP_INI_END()
  */
 
 static void php_hyperdex_init_globals(zend_hyperdex_globals *hyperdex_globals) {	
- 
+
 }
 /* }}} */
 
-/* {{{ hyperclient_free_storage     
+/* {{{ hyperclient_free_storage
 */
 void hyperclient_free_storage(void *object TSRMLS_DC) {
   hyperclient_object *obj = (hyperclient_object *)object;
@@ -191,7 +200,7 @@ void hyperclient_free_storage(void *object TSRMLS_DC) {
 }
 /* }}} */
 
-/* {{{ hyperclient_create_handler     
+/* {{{ hyperclient_create_handler
 */
 zend_object_value hyperclient_create_handler(zend_class_entry *type TSRMLS_DC) {
   zval *tmp;
@@ -205,7 +214,7 @@ zend_object_value hyperclient_create_handler(zend_class_entry *type TSRMLS_DC) {
   zend_hash_init(obj->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
 
 #if PHP_VERSION_ID < 50399	
-  zend_hash_copy( obj->std.properties, 
+  zend_hash_copy( obj->std.properties,
                   &type->default_properties,
                   (copy_ctor_func_t)zval_add_ref, (void *)(&tmp),
                   sizeof(zval *) );
@@ -315,7 +324,7 @@ PHP_METHOD( hyperclient, __construct ) {
   if (zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl", &host, &host_len, &port ) == FAILURE ) {
     RETURN_NULL();
   }
-  
+
   // Validate them, and throw an exception if there's an issue.
   if( NULL == host || 0 >= host_len ) {
     zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
@@ -335,7 +344,7 @@ PHP_METHOD( hyperclient, __construct ) {
     hdex = NULL;
     zend_throw_exception( hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
   }
-  
+
   // If all is good, then set the PHP thread's storage object
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object(object TSRMLS_CC );
   obj->hdex = hdex;
@@ -375,24 +384,24 @@ PHP_METHOD( hyperclient, connect ) {
     zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
     RETURN_FALSE;
   }
-  
+
   // Get the hyperclient object from PHP's thread storeage.
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   // If we get it, we need to delete the old one and create the new one.
   if( hdex != NULL ) {
     delete hdex;
 
     try {
-    
+
       // Instantiate the hyperclient, and try to connect.
       hdex = new hyperclient( host, port );
-      
+
       if( NULL == hdex ) {
         zend_throw_exception(hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
       }
-      
+
     } catch( ... ) {
       hdex = NULL;
       zend_throw_exception(hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
@@ -402,17 +411,17 @@ PHP_METHOD( hyperclient, connect ) {
     obj->hdex = hdex;
   }
 
-  // Return success if we set a valid hyperclient 
+  // Return success if we set a valid hyperclient
   RETURN_BOOL( hdex != NULL );
 }
-/* }}} */    
+/* }}} */
 
 /* {{{ proto Boolean disconnect( )
    Disconnect from the HyperDex server */
 PHP_METHOD( hyperclient, disconnect ) {
-  hyperclient*        hdex = NULL;  
+  hyperclient*        hdex = NULL;
   hyperclient_object* obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
-  
+
   hdex = obj->hdex;
 
   if( NULL != hdex ) {
@@ -433,12 +442,12 @@ PHP_METHOD( hyperclient, put ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -446,24 +455,24 @@ PHP_METHOD( hyperclient, put ) {
   if( zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "ssa", &scope, &scope_len, &key, &key_len, &arr ) == FAILURE ) {
     RETURN_FALSE;
   }
-  
+
   // Set our initial return value to false. Will be set to true if successful.
   RETVAL_TRUE;
 
   // Get the hyperclient object from PHP's thread storeage.
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   // If we have one, perform the operation.
   if( NULL != hdex ) {
     try {
 
       // Get the array hash for the attributes to be put.
       arr_hash = Z_ARRVAL_P( arr );
-      
-      // Allocate the HyperDex attribute array 
+
+      // Allocate the HyperDex attribute array
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       // Convert each entry (attribute) in the input array into an element in the hyperclient_attribute array.
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
@@ -472,16 +481,16 @@ PHP_METHOD( hyperclient, put ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         // Only take attributes (make sure the hash key is a string)
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
-          
+
           // Get the expected type (we may need it)
           hyperclient_returncode op_status;
-          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope, 
+          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
                                                                    (const char*)arr_key,
                                                                    &op_status );
-                                                                   
+
           // And convrt the hash value's ZVAL into the Attribute.
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt], expected_type );
           attr_cnt++;
@@ -493,7 +502,7 @@ PHP_METHOD( hyperclient, put ) {
 
       int64_t op_id = hdex->put( (const char*)scope,   /* the scope (table) */
                                  (const char*)key,     /* key (treated as opaque bytes) */
-                                 (size_t)key_len,       /* key size (in bytes) */ 
+                                 (size_t)key_len,       /* key size (in bytes) */
                                  attr,                  /* the attributes / values to store. */
                                  attr_cnt,              /* the number of attributes */
                                  &op_status );          /* where to put the status of the op */
@@ -506,16 +515,16 @@ PHP_METHOD( hyperclient, put ) {
           RETVAL_TRUE;
         }
       }
-      
+
     } catch( ... ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
     }
   }
-  
-  // Clean up allocated data 
+
+  // Clean up allocated data
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   // And finally return.
@@ -532,10 +541,10 @@ PHP_METHOD( hyperclient, put_attr ) {
   char*                   key           = NULL;
   int                     key_len       = -1;
   char*                   attr_name     = NULL;
-  int                     attr_name_len = -1;  
-  
-  zval*                   val           = NULL;  
-  
+  int                     attr_name_len = -1;
+
+  zval*                   val           = NULL;
+
   hyperclient_attribute*  attr          = NULL;
 
   // Get the input parameters: Scope, Key, attr name, the value to put there.
@@ -546,31 +555,31 @@ PHP_METHOD( hyperclient, put_attr ) {
   // Get the hyperclient object from PHP's thread storeage.
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
   hdex = obj->hdex;
-  
+
   // Set our intial return value to false (it will be set to true if the operation was successful)
   RETVAL_FALSE;
-  
+
   // If we have one, perform the operation.
   if( NULL != hdex ) {
     try {
-    
+
       // Get the expected type (we may need it)
       hyperclient_returncode op_status;
-      enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope, 
+      enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
                                                                (const char*)attr_name,
                                                                &op_status );
-                                                               
-      // And convert the ZVAL into the hyperclient_attribute.                                                               
-      attr  = new hyperclient_attribute();      
-      buildAttrFromZval( val, attr_name, attr, expected_type );      
-      
+
+      // And convert the ZVAL into the hyperclient_attribute.
+      attr  = new hyperclient_attribute();
+      buildAttrFromZval( val, attr_name, attr, expected_type );
+
       // Now, call the HyperClient to do the put of the attribute array.
       int64_t op_id = hdex->put( (const char*)scope,   /* the scope (table) */
                                  (const char*)key,     /* key (treated as opaque bytes) */
-                                 (size_t)key_len,       /* key size (in bytes) */ 
+                                 (size_t)key_len,       /* key size (in bytes) */
                                  attr,                  /* the attributes / values to store. */
                                  1,                     /* the number of attributes */
-                                 &op_status );          /* where to put the status of the op */          
+                                 &op_status );          /* where to put the status of the op */
 
       // Check the return code. Throw an exception and return false if there is an error.
       if( op_id < 0 ) {
@@ -589,9 +598,9 @@ PHP_METHOD( hyperclient, put_attr ) {
   // Clean up allocated memeory
   if( NULL != attr ) {
     freeAttrVals( attr, 1 );
-    delete attr;  
+    delete attr;
   }
-  
+
   // and return.
   return;
 }
@@ -606,19 +615,19 @@ PHP_METHOD( hyperclient, condput ) {
   int                     scope_len     = -1;
   char*                   key           = NULL;
   int                     key_len       = -1;
-  
+
   zval                    *cond         = NULL;
-  zval                    *attr         = NULL;  
+  zval                    *attr         = NULL;
   zval                    **data        = NULL;
   HashTable               *arr_hash     = NULL;
   HashPosition            pointer;
-  
-  hyperclient_attribute*  cond_attr     = NULL;
+
+  hyperclient_attribute_check*  cond_attr     = NULL;
   int                     cond_attr_cnt = 0;
-  
+
   hyperclient_attribute*  val_attr      = NULL;
   int                     val_attr_cnt  = 0;
-  
+
   int                     return_code   = 0;
 
   // Get the input parameters: Scope, Key, list of precondidtions (array) , the values to put (array).
@@ -629,17 +638,17 @@ PHP_METHOD( hyperclient, condput ) {
   // Get the hyperclient object from PHP's thread storeage.
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   // If we have one, perform the operation.
   if( NULL != hdex ) {
     try {
-      
+
       // Start by iterating through the conditional array, and building a list of hyperclient_attributes from the zvals.
       arr_hash = Z_ARRVAL_P(cond);
 
-      cond_attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
+      cond_attr = new hyperclient_attribute_check[zend_hash_num_elements( arr_hash )];
       cond_attr_cnt = 0;
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -650,21 +659,20 @@ PHP_METHOD( hyperclient, condput ) {
 
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
           hyperclient_returncode op_status;
-          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope, 
+          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
                                                                    (const char*)arr_key,
                                                                    &op_status );
-
-          buildAttrFromZval( *data, arr_key, &cond_attr[cond_attr_cnt], expected_type );       
+          buildAttrCheckFromZval(*data, arr_key, &cond_attr[cond_attr_cnt], cond_attr_cnt, HYPERPREDICATE_EQUALS, expected_type );
           cond_attr_cnt++;
         }
       }
 
-      // Then iterate across the attr array, and build a list of hyperclient_attributes from the zvals.      
+      // Then iterate across the attr array, and build a list of hyperclient_attributes from the zvals.
       arr_hash = Z_ARRVAL_P(attr);
 
-      val_attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];      
+      val_attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
       val_attr_cnt = 0;
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -675,42 +683,42 @@ PHP_METHOD( hyperclient, condput ) {
 
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
           hyperclient_returncode op_status;
-          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope, 
+          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
                                                                    (const char*)arr_key,
                                                                    &op_status );
 
           buildAttrFromZval( *data, arr_key, &val_attr[val_attr_cnt], expected_type );
           val_attr_cnt++;
         }
-      }                 
+      }
 
 
       // Now, perform the operation
       hyperclient_returncode op_status;
 
-      int64_t op_id = hdex->condput( (const char*)scope,    /* the scope (table) */
+      int64_t op_id = hdex->cond_put( (const char*)scope,    /* the scope (table) */
                                      (const char*)key,      /* key (treated as opaque bytes) */
-                                     (size_t)key_len,        /* key size (in bytes) */ 
+                                     (size_t)key_len,        /* key size (in bytes) */
                                      cond_attr,              /* the conditional attributes / values test for. */
                                      cond_attr_cnt,          /* the number of conditional attributes */
                                      val_attr,               /* the attributes / values to store. */
                                      val_attr_cnt,           /* the number of attributes to store */
-                                     &op_status );           /* where to put the status of the op */ 
-                                 
+                                     &op_status );           /* where to put the status of the op */
+
       // and check for errors / exception.
       if( op_id < 0 ) {
         zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
       } else {
         if( 0 < hyperdexLoop( hdex, op_id ) ) {
-        
-          // Only return TRUE if the operation completed successfully. 
+
+          // Only return TRUE if the operation completed successfully.
           if( op_status == HYPERCLIENT_SUCCESS ) {
             return_code = 1;
           }
-          
+
         }
-        
-      }           
+
+      }
 
     } catch( ... ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
@@ -719,10 +727,10 @@ PHP_METHOD( hyperclient, condput ) {
 
   // Free any allocated memory.
   if( NULL != cond_attr ) {
-    freeAttrVals( cond_attr, cond_attr_cnt );
+    freeAttrCheckVals( cond_attr, cond_attr_cnt );
     delete[] cond_attr;
   }
-  
+
   if( NULL != val_attr ) {
     freeAttrVals( val_attr, val_attr_cnt );
     delete[] val_attr;
@@ -742,12 +750,12 @@ PHP_METHOD( hyperclient, lpush ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -757,16 +765,16 @@ PHP_METHOD( hyperclient, lpush ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P(arr);
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements(arr_hash)];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -774,7 +782,7 @@ PHP_METHOD( hyperclient, lpush ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -785,7 +793,7 @@ PHP_METHOD( hyperclient, lpush ) {
 
       int64_t op_id = hdex->list_lpush ( (const char*)scope,   /* the scope (table) */
                                          (const char*)key,     /* key (treated as opaque bytes) */
-                                         (size_t)key_len,       /* key size (in bytes) */ 
+                                         (size_t)key_len,       /* key size (in bytes) */
                                          attr,                  /* the attributes / values to store. */
                                          attr_cnt,              /* the number of attributes */
                                          &op_status );          /* where to put the status of the op */
@@ -801,10 +809,10 @@ PHP_METHOD( hyperclient, lpush ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -820,12 +828,12 @@ PHP_METHOD(hyperclient,rpush) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -835,16 +843,16 @@ PHP_METHOD(hyperclient,rpush) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P(arr);
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -852,7 +860,7 @@ PHP_METHOD(hyperclient,rpush) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -863,7 +871,7 @@ PHP_METHOD(hyperclient,rpush) {
 
       int64_t op_id = hdex->list_rpush( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status );          /* where to put the status of the op */
@@ -880,10 +888,10 @@ PHP_METHOD(hyperclient,rpush) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -898,12 +906,12 @@ PHP_METHOD( hyperclient, set_add ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -913,16 +921,16 @@ PHP_METHOD( hyperclient, set_add ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -930,8 +938,8 @@ PHP_METHOD( hyperclient, set_add ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
-        if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {        
+
+        if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
         }
@@ -941,7 +949,7 @@ PHP_METHOD( hyperclient, set_add ) {
 
       int64_t op_id = hdex->set_add( (const char*)scope,   /* the scope (table) */
                                      (const char*)key,     /* key (treated as opaque bytes) */
-                                     (size_t)key_len,       /* key size (in bytes) */ 
+                                     (size_t)key_len,       /* key size (in bytes) */
                                      attr,                  /* the attributes / values to store. */
                                      attr_cnt,              /* the number of attributes */
                                      &op_status );          /* where to put the status of the op */
@@ -957,10 +965,10 @@ PHP_METHOD( hyperclient, set_add ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -976,12 +984,12 @@ PHP_METHOD( hyperclient, set_remove ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -991,16 +999,16 @@ PHP_METHOD( hyperclient, set_remove ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1008,7 +1016,7 @@ PHP_METHOD( hyperclient, set_remove ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1019,7 +1027,7 @@ PHP_METHOD( hyperclient, set_remove ) {
 
       int64_t op_id = hdex->set_remove( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status );          /* where to put the status of the op */
@@ -1036,10 +1044,10 @@ PHP_METHOD( hyperclient, set_remove ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1092,15 +1100,15 @@ PHP_METHOD( hyperclient, set_union ) {
 
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           hyperclient_returncode op_status;
-          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope, 
+          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
                                                                    (const char*)arr_key,
                                                                    &op_status );
-                                                                         
+
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt], expected_type );
           attr_cnt++;
         }
       }
-      
+
       hyperclient_returncode op_status;
 
       int64_t op_id = hdex->set_union( (const char*)scope,   /* the scope (table) */
@@ -1158,7 +1166,7 @@ PHP_METHOD( hyperclient, set_intersect ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
 
   if( NULL != hdex ) {
@@ -1178,10 +1186,10 @@ PHP_METHOD( hyperclient, set_intersect ) {
 
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           hyperclient_returncode op_status;
-          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope, 
+          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
                                                                    (const char*)arr_key,
                                                                    &op_status );
-                                                                           
+
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt], expected_type );
           attr_cnt++;
         }
@@ -1227,12 +1235,12 @@ PHP_METHOD( hyperclient, add ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1242,16 +1250,16 @@ PHP_METHOD( hyperclient, add ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1259,7 +1267,7 @@ PHP_METHOD( hyperclient, add ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1270,7 +1278,7 @@ PHP_METHOD( hyperclient, add ) {
 
       int64_t op_id = hdex->atomic_add( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1287,10 +1295,10 @@ PHP_METHOD( hyperclient, add ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"add failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1306,12 +1314,12 @@ PHP_METHOD( hyperclient, sub ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1321,16 +1329,16 @@ PHP_METHOD( hyperclient, sub ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1338,7 +1346,7 @@ PHP_METHOD( hyperclient, sub ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1349,7 +1357,7 @@ PHP_METHOD( hyperclient, sub ) {
 
       int64_t op_id = hdex->atomic_sub( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1366,10 +1374,10 @@ PHP_METHOD( hyperclient, sub ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"sub failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1385,12 +1393,12 @@ PHP_METHOD( hyperclient, mul ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1400,16 +1408,16 @@ PHP_METHOD( hyperclient, mul ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1417,7 +1425,7 @@ PHP_METHOD( hyperclient, mul ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1428,7 +1436,7 @@ PHP_METHOD( hyperclient, mul ) {
 
       int64_t op_id = hdex->atomic_mul( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1445,10 +1453,10 @@ PHP_METHOD( hyperclient, mul ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1457,7 +1465,7 @@ PHP_METHOD( hyperclient, mul ) {
 
 
 /* {{{ proto Boolean div(string space, String key, Array attributes)
-   Atomically divides the values of one or more attributes for a given space and key by the 
+   Atomically divides the values of one or more attributes for a given space and key by the
    divisor in the input array for that attribute. */
 PHP_METHOD( hyperclient, div ) {
   hyperclient*            hdex        = NULL;
@@ -1465,12 +1473,12 @@ PHP_METHOD( hyperclient, div ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1480,16 +1488,16 @@ PHP_METHOD( hyperclient, div ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1497,7 +1505,7 @@ PHP_METHOD( hyperclient, div ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1508,7 +1516,7 @@ PHP_METHOD( hyperclient, div ) {
 
       int64_t op_id = hdex->atomic_div( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1525,10 +1533,10 @@ PHP_METHOD( hyperclient, div ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1537,7 +1545,7 @@ PHP_METHOD( hyperclient, div ) {
 
 
 /* {{{ proto Boolean mod(string space, String key, Array attributes)
-   Atomically divides the values of one or more attributes for a given space and key by the 
+   Atomically divides the values of one or more attributes for a given space and key by the
    divisor in the input array for that attribute, and stores the remainder. */
 PHP_METHOD( hyperclient, mod ) {
   hyperclient*            hdex        = NULL;
@@ -1545,12 +1553,12 @@ PHP_METHOD( hyperclient, mod ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1560,16 +1568,16 @@ PHP_METHOD( hyperclient, mod ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1577,7 +1585,7 @@ PHP_METHOD( hyperclient, mod ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1588,7 +1596,7 @@ PHP_METHOD( hyperclient, mod ) {
 
       int64_t op_id = hdex->atomic_mod( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1605,10 +1613,10 @@ PHP_METHOD( hyperclient, mod ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1617,7 +1625,7 @@ PHP_METHOD( hyperclient, mod ) {
 
 
 /* {{{ proto Boolean and(string space, String key, Array attributes)
-   Atomically stores the bitwise AND of one or more attributes for a given space and key and 
+   Atomically stores the bitwise AND of one or more attributes for a given space and key and
    the integer passed in the input array for that attribute. */
 PHP_METHOD( hyperclient, and ) {
   hyperclient*            hdex        = NULL;
@@ -1625,12 +1633,12 @@ PHP_METHOD( hyperclient, and ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1640,16 +1648,16 @@ PHP_METHOD( hyperclient, and ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1657,7 +1665,7 @@ PHP_METHOD( hyperclient, and ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1668,7 +1676,7 @@ PHP_METHOD( hyperclient, and ) {
 
       int64_t op_id = hdex->atomic_and( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1685,10 +1693,10 @@ PHP_METHOD( hyperclient, and ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1697,7 +1705,7 @@ PHP_METHOD( hyperclient, and ) {
 
 
 /* {{{ proto Boolean or(string space, String key, Array attributes)
-   Atomically stores the bitwise OR of one or more attributes for a given space and key and the 
+   Atomically stores the bitwise OR of one or more attributes for a given space and key and the
    integer passed in the input array for that attribute. */
 PHP_METHOD( hyperclient, or ) {
   hyperclient*            hdex        = NULL;
@@ -1705,12 +1713,12 @@ PHP_METHOD( hyperclient, or ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1720,16 +1728,16 @@ PHP_METHOD( hyperclient, or ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1737,7 +1745,7 @@ PHP_METHOD( hyperclient, or ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1748,7 +1756,7 @@ PHP_METHOD( hyperclient, or ) {
 
       int64_t op_id = hdex->atomic_or( (const char*)scope,   /* the scope (table) */
                                        (const char*)key,     /* key (treated as opaque bytes) */
-                                       (size_t)key_len,       /* key size (in bytes) */ 
+                                       (size_t)key_len,       /* key size (in bytes) */
                                        attr,                  /* the attributes / values to store. */
                                        attr_cnt,              /* the number of attributes */
                                        &op_status);           /* where to put the status of the op */
@@ -1765,10 +1773,10 @@ PHP_METHOD( hyperclient, or ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1777,7 +1785,7 @@ PHP_METHOD( hyperclient, or ) {
 
 
 /* {{{ proto Boolean xor(string space, String key, Array attributes)
-   Atomically stores the bitwise XOR (Exclusive OR of one or more attributes for a given space and key and 
+   Atomically stores the bitwise XOR (Exclusive OR of one or more attributes for a given space and key and
    the integer passed in the input array for that attribute. */
 PHP_METHOD( hyperclient, xor ) {
   hyperclient*            hdex        = NULL;
@@ -1785,12 +1793,12 @@ PHP_METHOD( hyperclient, xor ) {
   int                     scope_len   = -1;
   char*                   key         = NULL;
   int                     key_len     = -1;
-  
+
   zval                    *arr        = NULL;
-  zval                    **data      = NULL;   
+  zval                    **data      = NULL;
   HashTable               *arr_hash   = NULL;
-  HashPosition            pointer;  
-  
+  HashPosition            pointer;
+
   hyperclient_attribute*  attr        = NULL;
   int                     attr_cnt    = 0;
 
@@ -1800,16 +1808,16 @@ PHP_METHOD( hyperclient, xor ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   RETVAL_FALSE;
-  
+
   if( NULL != hdex ) {
     try {
 
       arr_hash = Z_ARRVAL_P( arr );
-      
+
       attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1817,7 +1825,7 @@ PHP_METHOD( hyperclient, xor ) {
         char *arr_key;
         unsigned int arr_key_len;
         unsigned long index;
-         
+
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
           buildAttrFromZval( *data, arr_key, &attr[attr_cnt] );
           attr_cnt++;
@@ -1828,7 +1836,7 @@ PHP_METHOD( hyperclient, xor ) {
 
       int64_t op_id = hdex->atomic_xor( (const char*)scope,   /* the scope (table) */
                                         (const char*)key,     /* key (treated as opaque bytes) */
-                                        (size_t)key_len,       /* key size (in bytes) */ 
+                                        (size_t)key_len,       /* key size (in bytes) */
                                         attr,                  /* the attributes / values to store. */
                                         attr_cnt,              /* the number of attributes */
                                         &op_status);           /* where to put the status of the op */
@@ -1845,10 +1853,10 @@ PHP_METHOD( hyperclient, xor ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
     }
   }
-  
+
   if( NULL != attr ) {
     freeAttrVals( attr, attr_cnt );
-    delete[] attr;  
+    delete[] attr;
   }
 
   return;
@@ -1857,7 +1865,7 @@ PHP_METHOD( hyperclient, xor ) {
 
 
 /* {{{ proto Mixed search(string space, Array equality_conditionals, Array range_conditionals)
-   Searches for records with attributes matching the equality_conditionals and the range_conditionals. 
+   Searches for records with attributes matching the equality_conditionals and the range_conditionals.
    Returns an array of the matching records. */
 PHP_METHOD( hyperclient, search ) {
   hyperclient*             hdex         = NULL;
@@ -1865,23 +1873,23 @@ PHP_METHOD( hyperclient, search ) {
   int                      scope_len    = -1;
   zval*                    eq_cond      = NULL;
   zval*                    range_cond   = NULL;
-  
+
   zval**                   data;
   HashTable*               arr_hash;
   HashPosition             pointer;
-  
-  hyperclient_attribute*   eq_cond_attr = NULL;
-  hyperclient_range_query* rng_cond_qry = NULL;
-  int                      eq_attr_cnt  = 0;
+
+  range_query_old* rng_cond_qry = NULL;
   int                      rng_attr_cnt = 0;
+  hyperclient_attribute_check*   cond_attr = NULL;
+  int                      cond_attr_cnt = 0;
 
   if( zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "saa", &scope, &scope_len, &eq_cond, &range_cond ) == FAILURE ) {
     RETURN_FALSE;
   }
-  
+
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   if( NULL != hdex ) {
     try {
 
@@ -1890,9 +1898,9 @@ PHP_METHOD( hyperclient, search ) {
       //
       arr_hash = Z_ARRVAL_P(eq_cond);
 
-      eq_cond_attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];      
-      eq_attr_cnt = 0;
-      
+      cond_attr = new hyperclient_attribute_check[zend_hash_num_elements( arr_hash )];
+      cond_attr_cnt = 0;
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1902,19 +1910,23 @@ PHP_METHOD( hyperclient, search ) {
         unsigned long index;
 
         if( zend_hash_get_current_key_ex(arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
-          buildAttrFromZval( *data, arr_key, &eq_cond_attr[eq_attr_cnt] );       
-          eq_attr_cnt++;
+          hyperclient_returncode op_status;
+          enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
+                                                                   (const char*)arr_key,
+                                                                   &op_status );
+          buildAttrCheckFromZval(*data, arr_key, &cond_attr[cond_attr_cnt], cond_attr_cnt, HYPERPREDICATE_EQUALS, expected_type );
+          cond_attr_cnt++;
         }
       }
-      
+
       //
       // Get the Range Test Attributes...
       //
       arr_hash = Z_ARRVAL_P(range_cond);
 
-      rng_cond_qry = new hyperclient_range_query[zend_hash_num_elements( arr_hash )];
+      rng_cond_qry = new range_query_old[zend_hash_num_elements( arr_hash )];
       rng_attr_cnt = 0;
-      
+
       for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
            zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
@@ -1924,70 +1936,68 @@ PHP_METHOD( hyperclient, search ) {
         unsigned long index;
 
         if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
-          buildRangeFromZval( *data, arr_key, &rng_cond_qry[rng_attr_cnt] );       
+          buildRangeFromZval( *data, arr_key, &rng_cond_qry[rng_attr_cnt] );
           rng_attr_cnt++;
         }
       }
-      
+
       //
       // Build the query...
       //
       hyperclient_returncode op_status;
       hyperclient_attribute* attrs = NULL;
       size_t attrs_sz = 0;
-      
+
       int64_t op_id = hdex->search( (const char*)scope,    /* the scope (table) */
-                                    eq_cond_attr,           /* The equality attributes to search based on. */
-                                    eq_attr_cnt,            /* The number of equality attributes */
-                                    rng_cond_qry,           /* The range attributes to search based on */
-                                    rng_attr_cnt,           /* The number of range attributes */
+                                    cond_attr,           /* The equality attributes to search based on. */
+                                    cond_attr_cnt,            /* The number of equality attributes */
                                     &op_status,             /* where to put the status of the op */
-                                    &attrs,                 /* Store the retrieved data here */ 
+                                    &attrs,                 /* Store the retrieved data here */
                                     &attrs_sz);             /* The number of attributes returned */
 
       if( op_id < 0 ) {
-        freeAttrVals( eq_cond_attr, eq_attr_cnt );
+        freeAttrCheckVals( cond_attr, cond_attr_cnt );
         zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
       } else {
-      
-        array_init(return_value);        
+
+        array_init(return_value);
 
         while( 1 == hyperdexLoop( hdex, op_id ) && HYPERCLIENT_SEARCHDONE != op_status ) {
           if( attrs_sz > 0 ) {
             zval *temp;
             ALLOC_INIT_ZVAL(temp);
-          
+
             buildArrayFromAttrs( attrs, attrs_sz, temp );
-          
+
             add_next_index_zval( return_value, temp );
           }
         }
-        
-        hyperclient_destroy_attrs( attrs, attrs_sz );        
-        
-        if( NULL != eq_cond_attr ) {
-          freeAttrVals( eq_cond_attr, eq_attr_cnt );
-          delete[] eq_cond_attr;
+
+        hyperclient_destroy_attrs( attrs, attrs_sz );
+
+        if( NULL != cond_attr ) {
+          freeAttrCheckVals( cond_attr, cond_attr_cnt );
+          delete[] cond_attr;
         }
         if( NULL != rng_cond_qry ) {
           delete[] rng_cond_qry;
         }
-                       
+
         return;
       }
-      
-    } catch( int& e ) {     
+
+    } catch( int& e ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"Bad Range Check", 1 TSRMLS_CC );
     } catch( ... ) {
       zend_throw_exception( hyperclient_ce_exception, (char*)"Search failed", 1 TSRMLS_CC );
     }
   }
 
-  if( NULL != eq_cond_attr ) {
-    freeAttrVals( eq_cond_attr, eq_attr_cnt );
-    delete[] eq_cond_attr;
+  if( NULL != cond_attr ) {
+    freeAttrCheckVals( cond_attr, cond_attr_cnt );
+    delete[] cond_attr;
   }
-  
+
   if( NULL != rng_cond_qry ) {
     delete[] rng_cond_qry;
   }
@@ -2013,7 +2023,7 @@ PHP_METHOD( hyperclient, get ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
   hdex = obj->hdex;
-  
+
   if( NULL != hdex ) {
     try {
 
@@ -2023,7 +2033,7 @@ PHP_METHOD( hyperclient, get ) {
 
       int64_t op_id = hdex->get( (const char*)scope,  /* we'll retrieve from the space*/
                                  (const char*)key,    /* we'll get the specified key */
-                                 (size_t)key_len,      /* number of bytes in the key */ 
+                                 (size_t)key_len,      /* number of bytes in the key */
                                  &op_status,           /* We'll put the status here */
                                  &attrs,               /* Store the retrieved data here */
                                  &attrs_sz);           /* number of attributes in the retrieved record. */
@@ -2037,7 +2047,7 @@ PHP_METHOD( hyperclient, get ) {
           buildArrayFromAttrs( attrs, attrs_sz, return_value );
 
           hyperclient_destroy_attrs( attrs, attrs_sz );
-          
+
           return;
         }
       }
@@ -2066,7 +2076,7 @@ PHP_METHOD( hyperclient, get_attr ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   if( NULL != hdex ) {
     try {
 
@@ -2076,19 +2086,19 @@ PHP_METHOD( hyperclient, get_attr ) {
 
       int64_t op_id = hdex->get( (const char*)scope,   /* we'll retrieve from the space*/
                                  (const char*)key,     /* we'll get the specified key */
-                                 (size_t)key_len,       /* number of bytes in the key */ 
+                                 (size_t)key_len,       /* number of bytes in the key */
                                  &op_status,            /* We'll put the status here */
                                  &attrs,                /* Store the retrieved data here */
                                  &attrs_sz);            /* number of attributes in the retrieved record. */
-                                 
+
       if( op_id < 0 ) {
         zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
       } else {
 
         if( 1 == hyperdexLoop( hdex, op_id ) ) {
-          
+
           RETVAL_FALSE;
-          
+
           if( attrs_sz > 0 ) {
             for( int i = 0; i < attrs_sz; ++i ) {
 
@@ -2096,7 +2106,7 @@ PHP_METHOD( hyperclient, get_attr ) {
                 buildZvalFromAttr( &attrs[i], return_value );
                 break;
               }
-              
+
             }
           }
 
@@ -2128,7 +2138,7 @@ PHP_METHOD( hyperclient, del ) {
 
   hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
   hdex = obj->hdex;
-  
+
   if( NULL != hdex ) {
     try {
 
@@ -2148,7 +2158,7 @@ PHP_METHOD( hyperclient, del ) {
           RETURN_TRUE;
         }
       }
-      
+
     } catch( ... ) {
       zend_throw_exception(hyperclient_ce_exception, (char*)"delete failed", 1 TSRMLS_CC);
     }
@@ -2160,30 +2170,30 @@ PHP_METHOD( hyperclient, del ) {
 
 
 /**
- * Call the HyperDex receive loop so that we can get our data. 
+ * Call the HyperDex receive loop so that we can get our data.
  * Checks the return code from loop for errors, and throws the necessary
  * exceptions (based on loop status) if there is an error.
  */
 int hyperdexLoop( hyperclient* hdex, int64_t op_id ) {
   hyperclient_returncode loop_status;
-  
+
   int64_t loop_id = hdex->loop( -1,             /* wait forever */
                                 &loop_status);  /*if something goes wrong, tell us*/
-  
+
   if( loop_id < 0 ) {
     if( HYPERCLIENT_NONEPENDING != loop_status ) {
       zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( loop_status ), loop_status TSRMLS_CC );
       return loop_status;
     }
-      
-    return -1;      
+
+    return -1;
   }
-  
+
   if( op_id != loop_id ) {
     // This is most certainly a bug for this simple code.
     zend_throw_exception( hyperclient_ce_exception, (char*)"Loop ID not equal Op ID", 2 TSRMLS_CC );
     return -1;
-  }   
+  }
 
   return 1;
 }
@@ -2212,7 +2222,7 @@ uint64_t byteArrayToUInt64( unsigned char *arr, size_t bytes ) {
 void uint64ToByteArray( uint64_t num, size_t bytes, unsigned char *arr ) {
   size_t        i;
   unsigned char ch;
-  
+
   for( i = 0; i < bytes; i++  ) {
     ch = (num >> ((i & 7) << 3)) & 0xFF;
     arr[i] = ch;
@@ -2332,7 +2342,7 @@ void byteArrayToMapStringFloat( unsigned char* arr, size_t bytes, zval* return_v
   while( cntr < bytes ) {
 
     uint64_t byteCount = byteArrayToUInt64( arr + cntr, 4 );
-    
+
     char* key = (char*)ecalloc( 1, byteCount+1 );
     memcpy( key, arr + cntr+4, byteCount );
   	cntr = cntr + 4 + byteCount;
@@ -2356,7 +2366,7 @@ void byteArrayToMapInt64String( unsigned char* arr, size_t bytes, zval* return_v
   array_init(return_value);
 
   while( cntr < bytes ) {
-    
+
 	uint64_t key_val = byteArrayToUInt64( arr + cntr, 8 );
     char* key = (char*)ecalloc( 1, 16 );
 	sprintf(key, "%ld", key_val );
@@ -2441,17 +2451,17 @@ void stringListToByteArray( zval* array, unsigned char** output_array, size_t *b
 
   // Start by getting the overall size of the memory block that we will need to allocate.
   size_t byteCount = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     zval temp = **data;
     zval_copy_ctor( &temp );
     convert_to_string( &temp );
-    
+
     byteCount = byteCount + Z_STRLEN( temp ) + 4;
   }
-  
+
   *bytes = byteCount;
 
   // Allocate it
@@ -2459,10 +2469,10 @@ void stringListToByteArray( zval* array, unsigned char** output_array, size_t *b
 
   // Now, fill it with the data that we want.2420
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     zval temp = **data;
     zval_copy_ctor( &temp );
     convert_to_string( &temp );
@@ -2508,10 +2518,10 @@ void intListToByteArray( zval* array, unsigned char** output_array, size_t *byte
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
        zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     if( Z_TYPE_PP( data ) == IS_LONG ) {
 
       // convert the long into an 8 byte array (little-endian) and store it
@@ -2554,15 +2564,15 @@ void doubleListToByteArray( zval* array, unsigned char** output_array, size_t *b
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
        zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     if( Z_TYPE_PP( data ) == IS_DOUBLE ) {
 
       // convert the double into a byte array and store it
       memcpy( *output_array + ptr, (double*)&Z_DVAL_PP( data ), sizeof(double) );
-    
+
       // move to the next position
       ptr = ptr + sizeof(double);
     }
@@ -2587,8 +2597,8 @@ void stringStringHashToByteArray( zval* array, unsigned char** output_array, siz
 
   // Start by getting the overall size of the memory block that we will need to allocate.
   size_t byteCount = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
@@ -2597,11 +2607,11 @@ void stringStringHashToByteArray( zval* array, unsigned char** output_array, siz
 	  zval temp = **data;
       zval_copy_ctor( &temp );
       convert_to_string( &temp );
-    
+
       byteCount = byteCount + Z_STRLEN( temp ) + 4;
 	}
   }
-  
+
   *bytes = byteCount;
 
   // Allocate it
@@ -2609,12 +2619,12 @@ void stringStringHashToByteArray( zval* array, unsigned char** output_array, siz
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
-   
+
       // set the size of the current string key.
       uint64ToByteArray( arr_key_len , 4, (*output_array) + ptr );
 
@@ -2659,14 +2669,14 @@ void stringInt64HashToByteArray( zval* array, unsigned char** output_array, size
 
   // Start by getting the overall size of the memory block that we will need to allocate.
   size_t byteCount = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
       byteCount = byteCount + arr_key_len + 4 + 8;
 	  }
   }
-  
+
   *bytes = byteCount;
 
   // Allocate it
@@ -2674,12 +2684,12 @@ void stringInt64HashToByteArray( zval* array, unsigned char** output_array, size
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
-   
+
       // set the size of the current string key.
       uint64ToByteArray( arr_key_len , 4, (*output_array) + ptr );
 
@@ -2715,14 +2725,14 @@ void stringDoubleHashToByteArray( zval* array, unsigned char** output_array, siz
 
   // Start by getting the overall size of the memory block that we will need to allocate.
   size_t byteCount = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
       byteCount = byteCount + arr_key_len + 4 + sizeof( double);
 	  }
   }
-  
+
   *bytes = byteCount;
 
   // Allocate it
@@ -2730,12 +2740,12 @@ void stringDoubleHashToByteArray( zval* array, unsigned char** output_array, siz
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
-   
+
       // set the size of the current string key.
       uint64ToByteArray( arr_key_len , 4, (*output_array) + ptr );
 
@@ -2771,14 +2781,14 @@ void int64Int64HashToByteArray( zval* array, unsigned char** output_array, size_
 
   // Start by getting the overall size of the memory block that we will need to allocate.
   size_t byteCount = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_LONG) {
       byteCount = byteCount + 16;
 	}
   }
-  
+
   *bytes = byteCount;
 
   // Allocate it
@@ -2786,12 +2796,12 @@ void int64Int64HashToByteArray( zval* array, unsigned char** output_array, size_
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_LONG) {
-   
+
       // set the size of the current string key.
       uint64ToByteArray( index , 8, (*output_array) + ptr );
 
@@ -2824,18 +2834,18 @@ void int64StringHashToByteArray( zval* array, unsigned char** output_array, size
 
   // Start by getting the overall size of the memory block that we will need to allocate.
   size_t byteCount = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_LONG) {
       zval temp = **data;
       zval_copy_ctor( &temp );
       convert_to_string( &temp );
-    
-      byteCount = byteCount + Z_STRLEN( temp ) + 12;       
+
+      byteCount = byteCount + Z_STRLEN( temp ) + 12;
 	}
   }
-  
+
   *bytes = byteCount;
 
   // Allocate it
@@ -2843,12 +2853,12 @@ void int64StringHashToByteArray( zval* array, unsigned char** output_array, size
 
   // Now, fill it with the data that we want.
   size_t ptr = 0;
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_LONG) {
-   
+
       // set the size of the current string key.
       uint64ToByteArray( index , 8, (*output_array) + ptr );
 
@@ -2859,7 +2869,7 @@ void int64StringHashToByteArray( zval* array, unsigned char** output_array, size
       zval temp = **data;
       zval_copy_ctor( &temp );
       convert_to_string( &temp );
-      
+
       // set the size of the current string element.
       uint64ToByteArray( Z_STRLEN( temp ) , 4, (*output_array) + ptr );
 
@@ -2868,7 +2878,7 @@ void int64StringHashToByteArray( zval* array, unsigned char** output_array, size
 
       // move to the next string starting position
       ptr = ptr + 4 + Z_STRLEN( temp );
-    
+
     }
   }
 }
@@ -2887,10 +2897,10 @@ int isArrayAllLong( zval* array ) {
   int          return_value = 1;
 
   arr_hash = Z_ARRVAL_P( array );
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     if( Z_TYPE_PP(data) != IS_LONG ) {
       return_value = 0;
       break;
@@ -2913,10 +2923,10 @@ int isArrayAllDouble( zval* array ) {
   int          return_value = 1;
 
   arr_hash = Z_ARRVAL_P( array );
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     if( Z_TYPE_PP(data) != IS_DOUBLE ) {
       return_value = 0;
       break;
@@ -2935,15 +2945,15 @@ int isArrayHashTable( zval* array ) {
   HashPosition     pointer;
   char*            arr_key;
   unsigned int    arr_key_len;
-  unsigned long   index;  
+  unsigned long   index;
   zval**           data         = NULL;
   int              return_value = 0;
 
   arr_hash = Z_ARRVAL_P( array );
-  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+  for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+       zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-       
+
     if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
       return_value = 1;
       break;
@@ -2957,51 +2967,52 @@ int isArrayHashTable( zval* array ) {
 /**
  * Build a HyperDex ATTR structure from a PHP ZVAL structure.
  */
-void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, enum hyperdatatype expected_type ) {
+template<class hyperclient_attributeT>
+void _buildAttrFromZval( zval* data, char* arr_key, hyperclient_attributeT* attr, enum hyperdatatype expected_type ) {
 
   zval temp = *data;
   zval_copy_ctor(&temp);
 
   attr->attr = arr_key;
 
-  if( Z_TYPE( temp ) == IS_STRING ) {            
-  
+  if( Z_TYPE( temp ) == IS_STRING ) {
+
     //
     // Convert a string
     //
     attr->value = Z_STRVAL(temp);
     attr->value_sz = Z_STRLEN(temp);
     attr->datatype = HYPERDATATYPE_STRING;
-    
+
   } else if( Z_TYPE( temp ) == IS_LONG ) {
-  
+
     //
     // Convert a long (integer)
     //
-    unsigned char* val = (unsigned char*)calloc( 1, 9 );    
-    uint64ToByteArray( Z_LVAL( temp ), 8, val );    
-    
+    unsigned char* val = (unsigned char*)calloc( 1, 9 );
+    uint64ToByteArray( Z_LVAL( temp ), 8, val );
+
     attr->value = (const char*)val;
     attr->value_sz = 8;
     attr->datatype = HYPERDATATYPE_INT64;
-    
-  } else if( Z_TYPE( temp ) == IS_DOUBLE ) {    
+
+  } else if( Z_TYPE( temp ) == IS_DOUBLE ) {
 
     //
     // Convert a Double (floating point number)
     //
     char* val = (char*)calloc( 1, sizeof(double) );
     memcpy( val, (double*)&Z_DVAL( temp ), sizeof(double) );
-    
+
     attr->value = (const char*)val;
     attr->value_sz = sizeof(double);
     attr->datatype = HYPERDATATYPE_FLOAT;
-    
+
   } else if( Z_TYPE( temp ) == IS_ARRAY ) {
-  
+
   //
   // Convert an array into a list (it will either be all integers, all doubles, or all strings)
-  //    
+  //
   unsigned char* val = NULL;
   size_t num_bytes = 0;
       	
@@ -3010,11 +3021,11 @@ void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, 
 	  // If the keys for the array are all alpha-numeric, we have a PHP Hash..
 	  // We will make that a string/<x> Map for Hyperdex.
 	  //
-    
-	  
+
+	
 	  //
-	  // Check the type in the value of each element. 
-	  // If all are integers, make it a hash of ints. 
+	  // Check the type in the value of each element.
+	  // If all are integers, make it a hash of ints.
 	  // Else, if all are doubles, make it a hash of doubles.
 	  // Else, by default, convert them to string, and make it a hash of strings.
 	  //
@@ -3031,13 +3042,13 @@ void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, 
       stringStringHashToByteArray( &temp, &val, &num_bytes );
       attr->datatype = HYPERDATATYPE_MAP_STRING_STRING;
 	  }
-	  
-/*	} else if( expected_type > HYPERDATATYPE_MAP_INT64_KEYONLY && 
+	
+/*	} else if( expected_type > HYPERDATATYPE_MAP_INT64_KEYONLY &&
 	            expected_type < HYPERDATATYPE_MAP_FLOAT_KEYONLY ) {
 	  //
 	  // We have a PHP list, but HyperDex is expecting a Map with numeric keys.
 	  //	
-	  
+	
 	  // are the value all integers?
 	  if( 1 == isArrayAllLong( &temp ) ) {
            // HashInt64Int64
@@ -3046,37 +3057,37 @@ void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, 
            // HashInt64String
            int64StringHashToByteArray( &temp, &val, &num_bytes );
 	  }
-*/	  
+*/	
 	}  else {
 	  //
 	  // Else, we will have a PHP List and HyperDex wants a list or set, which is OK...
 	  //
-	  
+	
       if( 1 == isArrayAllLong( &temp ) ) {
-    
+
         //
         // Long Integer array or set
-        //              
-        
-        // A set needs to be sorted...  
+        //
+
+        // A set needs to be sorted...
         int sort = 0;
         if( expected_type == HYPERDATATYPE_SET_INT64 ) {
           sort = 1;
         }
 
         intListToByteArray( &temp, &val, &num_bytes, sort );
-        
+
         if( expected_type == HYPERDATATYPE_SET_INT64 ) {
           attr->datatype = HYPERDATATYPE_SET_INT64;
-        } else {        
+        } else {
           attr->datatype = HYPERDATATYPE_LIST_INT64;
         }
-      
+
       } else if( 1 == isArrayAllDouble( &temp ) ) {
         //
         // Double precision float array or set
-        //                
-        
+        //
+
         // A set needs to be sorted...
         int sort = 0;
         if( expected_type == HYPERDATATYPE_SET_FLOAT ) {
@@ -3084,18 +3095,18 @@ void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, 
         }
 
         doubleListToByteArray( &temp, &val, &num_bytes, sort );
-         
+
         if( expected_type == HYPERDATATYPE_SET_FLOAT ) {
           attr->datatype = HYPERDATATYPE_SET_FLOAT;
-        } else {        
+        } else {
           attr->datatype = HYPERDATATYPE_LIST_FLOAT;
-        }      
+        }
       } else {
-       
+
         //
         // String array or set (also the default if the incoming array is mixed value type)
-        //        
-        
+        //
+
         // A set needs to be sorted...
         int sort = 0;
         if( expected_type == HYPERDATATYPE_SET_STRING ) {
@@ -3103,22 +3114,30 @@ void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, 
         }
 
         stringListToByteArray( &temp, &val, &num_bytes, sort );
-        
+
         if( expected_type == HYPERDATATYPE_SET_STRING ) {
           attr->datatype = HYPERDATATYPE_SET_STRING;
-        } else {        
+        } else {
           attr->datatype = HYPERDATATYPE_LIST_STRING;
         }
 
       }
 	}
-    // 
+    //
     // Now assign the array character buffer to the value.
     //
     attr->value = (const char*)val;
     attr->value_sz = num_bytes;
-  }    
-  
+  }
+
+}
+void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, enum hyperdatatype expected_type ) {
+	_buildAttrFromZval<hyperclient_attribute>(data, arr_key, attr, expected_type );
+}
+
+void buildAttrCheckFromZval( zval* data, char* arr_key, hyperclient_attribute_check* attr, int arrpos, enum hyperpredicate pred, enum hyperdatatype expected_type) {
+	_buildAttrFromZval<hyperclient_attribute_check>(data, arr_key, attr, expected_type );
+	attr[arrpos].predicate=pred;
 }
 
 
@@ -3126,9 +3145,9 @@ void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, 
  * Take a list of attributes, and build an Hash Array ZVAL out of it.
  */
 void buildArrayFromAttrs( hyperclient_attribute* attrs, size_t attrs_sz, zval* data ) {
-  
-  array_init(data);          
-  
+
+  array_init(data);
+
   if( attrs_sz > 0 ) {
     for( int i = 0; i < attrs_sz; ++i ) {
 
@@ -3136,16 +3155,16 @@ void buildArrayFromAttrs( hyperclient_attribute* attrs, size_t attrs_sz, zval* d
 
       zval *mysubdata;
       ALLOC_INIT_ZVAL(mysubdata);
-      
-      buildZvalFromAttr( &attrs[i], mysubdata );      
-      add_assoc_zval( data, attr_name, mysubdata );    
+
+      buildZvalFromAttr( &attrs[i], mysubdata );
+      add_assoc_zval( data, attr_name, mysubdata );
     }
   } else {
     ZVAL_BOOL( data, 0 );
   }
 }
-  
-   
+
+
 /**
  *  Build a ZVAL frmo a specific HyperDex attribute.
  */
@@ -3154,19 +3173,19 @@ void buildZvalFromAttr( hyperclient_attribute* attr, zval* data ) {
   if( attr->datatype == HYPERDATATYPE_STRING ) {
     char* r_val = estrndup((char *)attr->value, attr->value_sz);
     ZVAL_STRINGL( data, r_val, attr->value_sz, 0 );
-  } else if( attr->datatype == HYPERDATATYPE_INT64 ) {  
+  } else if( attr->datatype == HYPERDATATYPE_INT64 ) {
     ZVAL_LONG( data, byteArrayToUInt64( (unsigned char*)attr->value, attr->value_sz) );
-  } else if( attr->datatype == HYPERDATATYPE_FLOAT ) {  
+  } else if( attr->datatype == HYPERDATATYPE_FLOAT ) {
     ZVAL_DOUBLE( data, *( (double*) attr->value ) );
   } else if( attr->datatype == HYPERDATATYPE_LIST_STRING ||
 	            attr->datatype == HYPERDATATYPE_SET_STRING ) {
     byteArrayToListString( (unsigned char*)attr->value, attr->value_sz, data );
-  } else if( attr->datatype == HYPERDATATYPE_LIST_INT64 || 
+  } else if( attr->datatype == HYPERDATATYPE_LIST_INT64 ||
 	            attr->datatype == HYPERDATATYPE_SET_INT64 ) {
     byteArrayToListInt64( (unsigned char*)attr->value, attr->value_sz, data );
-  } else if( attr->datatype == HYPERDATATYPE_LIST_FLOAT || 
+  } else if( attr->datatype == HYPERDATATYPE_LIST_FLOAT ||
 	            attr->datatype == HYPERDATATYPE_SET_FLOAT ) {
-    byteArrayToListFloat( (unsigned char*)attr->value, attr->value_sz, data );    
+    byteArrayToListFloat( (unsigned char*)attr->value, attr->value_sz, data );
   } else if( attr->datatype == HYPERDATATYPE_MAP_STRING_STRING ) {
     byteArrayToMapStringString( (unsigned char*)attr->value, attr->value_sz, data );
   } else if( attr->datatype == HYPERDATATYPE_MAP_STRING_INT64 ) {
@@ -3176,10 +3195,10 @@ void buildZvalFromAttr( hyperclient_attribute* attr, zval* data ) {
   } else if( attr->datatype == HYPERDATATYPE_MAP_INT64_STRING ) {
     byteArrayToMapInt64String( (unsigned char*)attr->value, attr->value_sz, data );
   } else if( attr->datatype == HYPERDATATYPE_MAP_INT64_INT64 ) {
-    byteArrayToMapInt64Int64( (unsigned char*)attr->value, attr->value_sz, data );    
+    byteArrayToMapInt64Int64( (unsigned char*)attr->value, attr->value_sz, data );
   } else if( attr->datatype == HYPERDATATYPE_MAP_INT64_FLOAT ) {
     byteArrayToMapInt64Float( (unsigned char*)attr->value, attr->value_sz, data );
-    
+
   } else {
     zend_throw_exception(hyperclient_ce_exception, (char*)"Unknown data type", attr->datatype TSRMLS_CC);
   }
@@ -3189,60 +3208,61 @@ void buildZvalFromAttr( hyperclient_attribute* attr, zval* data ) {
 /**
  * Build a HyperDex Range Query structure from a PHP ZVAL structure.
  */
-void buildRangeFromZval( zval* input, char* arr_key, hyperclient_range_query* rng_q ) {
+void buildRangeFromZval( zval* input, char* arr_key, range_query_old* rng_q ) {
 
   zval temp = *input;
   zval_copy_ctor(&temp);
 
-  if( Z_TYPE( temp ) == IS_ARRAY ) {     
+  if( Z_TYPE( temp ) == IS_ARRAY ) {
 
     if( 1 == isArrayAllLong( &temp ) ) {
 
       HashTable *arr_hash = Z_ARRVAL(temp);
       HashPosition pointer;
       zval **data;
-      
+
       uint64_t array_vals[2] = {0, 0};
       int cntr = 0;
-      for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer ); 
-           zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS; 
+      for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+           zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
            zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-           
+
         if( Z_TYPE_PP(data) == IS_LONG ) {
            array_vals[cntr++] = Z_LVAL_PP( data );
            if( cntr == 2 ) break;
         }
       }
-      
+
       if( cntr != 2 ) {
         // Error - The input array exactly 2 integers.
         zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
         throw -1;
       } else {
 
-        rng_q->attr = arr_key;      
+        rng_q->attr = arr_key;
         rng_q->lower = array_vals[0];
         rng_q->upper = array_vals[1];
       }
-      
-    } else {    
+
+    } else {
       // Error - The input array should contain all integers.
       zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
       throw -1;
     }
-        
+
   } else {
     // The input *MUST* be an array.
     zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range type", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
     throw -1;
   }
-    
+
 }
 
 /**
  *  Clean up memory allocated by the system for storing HyperDex values.
  */
-void freeAttrVals( hyperclient_attribute *attr, int len ) {
+template<class hyperclient_attributeT>
+void _freeAttrVals( hyperclient_attributeT *attr, int len ) {
   for( int i = 0; i < len; ++i ) {
     switch( attr[i].datatype ) {
       case HYPERDATATYPE_INT64:
@@ -3263,12 +3283,19 @@ void freeAttrVals( hyperclient_attribute *attr, int len ) {
     }
   }
 }
- 
+void freeAttrVals( hyperclient_attribute *attr, int len ) {
+	_freeAttrVals<hyperclient_attribute>(attr, len );
+}
+
+void freeAttrCheckVals( hyperclient_attribute_check *attr, int len ) {
+	_freeAttrVals<hyperclient_attribute_check>(attr, len );
+}
+
 /*
  * Borrowed from PHP iteslf
  */
 static int php_array_string_compare(const void *a, const void *b TSRMLS_DC) /* {{{ */
-{    
+{
 	Bucket *f;
 	Bucket *s;
 	zval result;
