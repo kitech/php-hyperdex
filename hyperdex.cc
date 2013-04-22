@@ -32,11 +32,6 @@
 #include <zend_exceptions.h>
 #include <zend_operators.h>
 
-struct range_query_old {
-	const char* attr;
-	uint64_t lower;
-	uint64_t upper;
-};
 ZEND_DECLARE_MODULE_GLOBALS(hyperdex)
 
 /*
@@ -1902,11 +1897,11 @@ PHP_METHOD( hyperclient, search )
 	zval*                    range_cond   = NULL;
 
 	zval**                   data;
-	HashTable*               arr_hash;
-	HashPosition             pointer;
+	HashTable*               eq_arr_hash;
+	HashPosition             eq_pointer;
+	HashTable*               rn_arr_hash;
+	HashPosition             rn_pointer;
 
-	range_query_old* rng_cond_qry = NULL;
-	int                      rng_attr_cnt = 0;
 	hyperclient_attribute_check*   cond_attr = NULL;
 	int                      cond_attr_cnt = 0;
 
@@ -1923,49 +1918,47 @@ PHP_METHOD( hyperclient, search )
 			//
 			// Get the Equality Test Attributes...
 			//
-			arr_hash = Z_ARRVAL_P(eq_cond);
+			eq_arr_hash = Z_ARRVAL_P(eq_cond);
+			rn_arr_hash = Z_ARRVAL_P(range_cond);
 
-			cond_attr = new hyperclient_attribute_check[zend_hash_num_elements( arr_hash )];
+			cond_attr = new hyperclient_attribute_check[
+				zend_hash_num_elements(eq_arr_hash) + 
+				(2*zend_hash_num_elements(rn_arr_hash))
+			];
 			cond_attr_cnt = 0;
 
-			for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
-			        zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
-			        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
+			for( zend_hash_internal_pointer_reset_ex( eq_arr_hash, &eq_pointer );
+			        zend_hash_get_current_data_ex( eq_arr_hash, (void**) &data, &eq_pointer ) == SUCCESS;
+			        zend_hash_move_forward_ex( eq_arr_hash, &eq_pointer ) ) {
 
 				char *arr_key;
 				unsigned int arr_key_len;
 				unsigned long index;
 
-				if( zend_hash_get_current_key_ex(arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
+				if( zend_hash_get_current_key_ex(eq_arr_hash, &arr_key, &arr_key_len, &index, 0, &eq_pointer ) == HASH_KEY_IS_STRING ) {
 					hyperclient_returncode op_status;
 					enum hyperdatatype expected_type = hdex->attribute_type( (const char*)scope,
 					                                   (const char*)arr_key,
 					                                   &op_status );
 					buildAttrCheckFromZval(*data, arr_key, &cond_attr[cond_attr_cnt], HYPERPREDICATE_EQUALS, expected_type );
-					cond_attr_cnt++;
+					++cond_attr_cnt;
 				}
 			}
 
 			//
 			// Get the Range Test Attributes...
 			//
-			arr_hash = Z_ARRVAL_P(range_cond);
-
-			rng_cond_qry = new range_query_old[zend_hash_num_elements( arr_hash )];
-			rng_attr_cnt = 0;
-
-			for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
-			        zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
-			        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
+			for( zend_hash_internal_pointer_reset_ex( rn_arr_hash, &rn_pointer );
+			        zend_hash_get_current_data_ex( rn_arr_hash, (void**) &data, &rn_pointer ) == SUCCESS;
+			        zend_hash_move_forward_ex( rn_arr_hash, &rn_pointer ) ) {
 
 				char *arr_key;
 				unsigned int arr_key_len;
 				unsigned long index;
 
-				if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
-					// buildRangeFromZval( *data, arr_key, &rng_cond_qry[rng_attr_cnt] );
-					// buildRangeFromZval(*data, arr_key, &cond_attr[cond_attr_cnt], cond_attr_cnt, HYPERPREDICATE_EQUALS, expected_type );
-					rng_attr_cnt++;
+				if( zend_hash_get_current_key_ex( rn_arr_hash, &arr_key, &arr_key_len, &index, 0, &rn_pointer ) == HASH_KEY_IS_STRING ) {
+					buildRangeFromZval(*data, arr_key, &cond_attr[cond_attr_cnt], &cond_attr[cond_attr_cnt+1] );
+					cond_attr_cnt+=2;
 				}
 			}
 
@@ -2007,10 +2000,6 @@ PHP_METHOD( hyperclient, search )
 					freeAttrCheckVals( cond_attr, cond_attr_cnt );
 					delete[] cond_attr;
 				}
-				if( NULL != rng_cond_qry ) {
-					delete[] rng_cond_qry;
-				}
-
 				return;
 			}
 
@@ -2024,10 +2013,6 @@ PHP_METHOD( hyperclient, search )
 	if( NULL != cond_attr ) {
 		freeAttrCheckVals( cond_attr, cond_attr_cnt );
 		delete[] cond_attr;
-	}
-
-	if( NULL != rng_cond_qry ) {
-		delete[] rng_cond_qry;
 	}
 
 	RETURN_FALSE;
