@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
  */
 
-/* $Id: hyperdex.cc,v 1.1 2013/04/22 08:08:45 shreos Exp $ */
+/* $Id: hyperdex.cc,v 1.5 2013/04/22 10:33:55 shreos Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -82,7 +82,7 @@ void int64StringHashToByteArray( zval* array, unsigned char** output_array, size
 
 void buildAttrFromZval( zval* data, char* arr_key, hyperclient_attribute* attr, enum hyperdatatype expected_type = HYPERDATATYPE_STRING );
 void buildAttrCheckFromZval( zval* data, char* arr_key, hyperclient_attribute_check* attr, enum hyperpredicate pred, enum hyperdatatype expected_type= HYPERDATATYPE_STRING);
-void buildRangeFromZval( zval* input, char* arr_key, range_query_old* rng_q );
+void buildRangeFromZval( zval* data, char* arr_key, hyperclient_attribute_check* fattr, hyperclient_attribute_check* sattr);
 
 void buildArrayFromAttrs( hyperclient_attribute* attr, size_t attrs_sz, zval* data );
 void buildZvalFromAttr( hyperclient_attribute* attr, zval* data );
@@ -95,6 +95,7 @@ int isArrayAllDouble( zval* array );
 int isArrayHashTable( zval* array );
 
 char* HyperDexErrorToMsg( hyperclient_returncode code );
+enum hyperdatatype SimpleBasicType(zval** data); 
 
 static int php_array_string_compare(const void *a, const void *b TSRMLS_DC);
 static int php_array_number_compare(const void *a, const void *b TSRMLS_DC);
@@ -1962,7 +1963,7 @@ PHP_METHOD( hyperclient, search )
 				unsigned long index;
 
 				if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING ) {
-					buildRangeFromZval( *data, arr_key, &rng_cond_qry[rng_attr_cnt] );
+					// buildRangeFromZval( *data, arr_key, &rng_cond_qry[rng_attr_cnt] );
 					// buildRangeFromZval(*data, arr_key, &cond_attr[cond_attr_cnt], cond_attr_cnt, HYPERPREDICATE_EQUALS, expected_type );
 					rng_attr_cnt++;
 				}
@@ -3266,49 +3267,49 @@ void buildZvalFromAttr( hyperclient_attribute* attr, zval* data )
 /**
  * Build a HyperDex Range Query structure from a PHP ZVAL structure.
  */
-void buildRangeFromZval( zval* input, char* arr_key, range_query_old* rng_q )
+void buildRangeFromZval( zval* data, char* arr_key, hyperclient_attribute_check* fattr, hyperclient_attribute_check* sattr)
 {
 
-	zval temp = *input;
+	zval temp = *data;
 	zval_copy_ctor(&temp);
 
 	if( Z_TYPE( temp ) == IS_ARRAY ) {
+		//
+		// Check the type in the value of each element.
+		// If all are integers, make it a hash of ints.
+		// Else, if all are doubles, make it a hash of doubles.
+		// Else, by default, convert them to string, and make it a hash of strings.
+		//
+		HashTable *arr_hash = Z_ARRVAL(temp);
+		HashPosition pointer;
+		zval **udata;
+		int cntr = 0;
+		enum hyperdatatype dtyp;
 
-		if( 1 == isArrayAllLong( &temp ) ) {
+		for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
+		        zend_hash_get_current_data_ex( arr_hash, (void**) &udata, &pointer ) == SUCCESS;
+		        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
 
-			HashTable *arr_hash = Z_ARRVAL(temp);
-			HashPosition pointer;
-			zval **data;
-
-			uint64_t array_vals[2] = {0, 0};
-			int cntr = 0;
-			for( zend_hash_internal_pointer_reset_ex( arr_hash, &pointer );
-			        zend_hash_get_current_data_ex( arr_hash, (void**) &data, &pointer ) == SUCCESS;
-			        zend_hash_move_forward_ex( arr_hash, &pointer ) ) {
-
-				if( Z_TYPE_PP(data) == IS_LONG ) {
-					array_vals[cntr++] = Z_LVAL_PP( data );
-					if( cntr == 2 ) break;
+			if (cntr==0) {
+				dtyp=SimpleBasicType(udata);
+				_buildAttrFromZval<hyperclient_attribute_check>(*udata, arr_key, fattr, dtyp);
+				fattr->predicate=HYPERPREDICATE_GREATER_EQUAL;
+			} else if (cntr==1) {
+				if (dtyp!=SimpleBasicType(udata)) {
+					zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range types", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
+					throw -1;
 				}
-			}
-
-			if( cntr != 2 ) {
-				// Error - The input array exactly 2 integers.
-				zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
-				throw -1;
+				_buildAttrFromZval<hyperclient_attribute_check>(*udata, arr_key, sattr, dtyp);
+				sattr->predicate=HYPERPREDICATE_LESS_EQUAL;
 			} else {
-
-				rng_q->attr = arr_key;
-				rng_q->lower = array_vals[0];
-				rng_q->upper = array_vals[1];
+				break;
 			}
-
-		} else {
-			// Error - The input array should contain all integers.
+			++cntr;
+		}
+		if(cntr!=2) {
 			zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
 			throw -1;
 		}
-
 	} else {
 		// The input *MUST* be an array.
 		zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range type", HYPERCLIENT_WRONGTYPE TSRMLS_CC);
@@ -3486,3 +3487,8 @@ char* HyperDexErrorToMsg( hyperclient_returncode code )
 	}
 }
 
+enum hyperdatatype SimpleBasicType(zval** data) {
+	if( Z_TYPE_PP(data) == IS_LONG ) return HYPERDATATYPE_INT64;
+	else if( Z_TYPE_PP(data) == IS_DOUBLE ) return HYPERDATATYPE_FLOAT;
+	else return HYPERDATATYPE_STRING;
+}
