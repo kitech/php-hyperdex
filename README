@@ -3,14 +3,16 @@ php-hyperdex
 The hyperdex extension provides an API for communicating with the Hyperdex key-value store. 
 It is released under the [PHP License, version 3.01](http://www.php.net/license/3_01.txt).
 
-This code has been developed and maintained by Triton Digital Media, and provided to the open 
+This code was originally developed my at Triton Digital Media, and provided to the open 
 source community as a "thank you". We use open source software in our business, and feel that it 
 is only right to give back whenever we can.
+
+Ongoing, this code will be maintained by me outside of work hours, and without their involvement.
 
 For more information on Hyperdex, please see http://hyperdex.org/
 
 
-For comments, or issues, please contact bbroerman@tritonmedia.com
+For comments, or issues, please contact bbroerman@bbroerman.net
 
 Note: This code is no longer being maintained. For updated versions, please see https://github.com/bbroerman30/php-hyperdex
 
