@@ -23,7 +23,8 @@ if test "$PHP_HYPERDEX" != "no"; then
   PHP_REQUIRE_CXX()
   PHP_SUBST(HYPERDEX_SHARED_LIBADD)
   PHP_ADD_LIBRARY(stdc++, 1, HYPERDEX_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(hyperclient, 1, HYPERDEX_SHARED_LIBADD)
+  PHP_ADD_LIBRARY(hyperdex-client, 1, HYPERDEX_SHARED_LIBADD)
+  PHP_ADD_LIBRARY(hyperdex-admin, 1, HYPERDEX_SHARED_LIBADD)
 
   dnl # --with-hyperdex -> check with-path
   dnl SEARCH_PATH="/usr/local /usr"     # you might want to change this
