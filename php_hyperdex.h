@@ -74,6 +74,12 @@ PHP_METHOD(hyperclient, get_attr);
 
 PHP_METHOD(hyperclient, del);
 
+
+PHP_METHOD(HyperdexAdmin, __construct);
+PHP_METHOD(HyperdexAdmin, __destruct);
+PHP_METHOD(HyperdexAdmin, add_space);
+PHP_METHOD(HyperdexAdmin, list_spaces);
+
 /* 
   	Declare any global variables you may need between the BEGIN
 	and END macros here:     

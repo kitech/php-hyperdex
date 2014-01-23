@@ -29,6 +29,7 @@
 #include <unistd.h>
 //#include <hyperclient.h>
 #include <hyperdex/client.h>
+#include <hyperdex/admin.h>
 #include <hyperdex.h>
 #include <zend_exceptions.h>
 #include <zend_operators.h>
@@ -42,6 +43,12 @@ zend_class_entry* cmdex_ce;
 zend_class_entry* hyperclient_ce_exception;
 
 zend_object_handlers hyperclient_object_handlers;
+
+zend_class_entry* hyperdex_admin_cmdex_ce;
+zend_class_entry* hyperdex_admin_ce_exception;
+
+zend_object_handlers hyperdex_admin_object_handlers;
+
 
 /*
  * Helper functions for HyperDex
@@ -105,6 +112,12 @@ struct hyperclient_object {
 	hyperclient_object() : hdex(NULL) {}
 };
 
+struct hyperdex_admin_object {
+	zend_object  std;
+	hyperdex_admin* hdex;
+	hyperdex_admin_object() : hdex(NULL) {}
+};
+
 /* {{{ hyperdex_functions[]
  *
  * Every user visible function must have an entry in hyperdex_functions[].
@@ -141,9 +154,25 @@ static zend_function_entry hyperdex_functions[] = {
 	PHP_ME(hyperclient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(hyperclient, del,                     	NULL, ZEND_ACC_PUBLIC )
+
 	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
 /* }}} */
+
+/* {{{ hyperdex_admin_functions[]
+ *
+ * Every user visible function must have an entry in hyperdex_admin_functions[].
+ */
+static zend_function_entry hyperdex_admin_functions[] = {
+	PHP_ME(HyperdexAdmin, __construct,                NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR )
+	PHP_ME(HyperdexAdmin, __destruct,                 NULL, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR )
+	PHP_ME(HyperdexAdmin, add_space,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, list_spaces,                 NULL, ZEND_ACC_PUBLIC )
+
+	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
+};
+/* }}} */
+
 
 /* {{{ hyperdex_module_entry
  */
@@ -246,12 +275,77 @@ void hyperclient_init_exception(TSRMLS_D)
 	hyperclient_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperclient_get_exception_base(), NULL TSRMLS_CC );
 }
 
+/* {{{ hyperdex_admin_free_storage
+*/
+void hyperdex_admin_free_storage(void *object TSRMLS_DC)
+{
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)object;
+	delete obj->hdex;
+
+	zend_hash_destroy( obj->std.properties );
+	FREE_HASHTABLE( obj->std.properties );
+
+	efree(obj);
+}
+/* }}} */
+
+/* {{{ hyperclient_create_handler
+*/
+zend_object_value hyperdex_admin_create_handler(zend_class_entry *type TSRMLS_DC)
+{
+	zval *tmp;
+	zend_object_value retval;
+
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)emalloc( sizeof( hyperdex_admin_object ) );
+	memset( obj, 0, sizeof( hyperdex_admin_object ) );
+	obj->std.ce = type;
+
+	ALLOC_HASHTABLE(obj->std.properties);
+	zend_hash_init(obj->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+
+#if PHP_VERSION_ID < 50399
+	zend_hash_copy( obj->std.properties,
+	                &type->default_properties,
+	                (copy_ctor_func_t)zval_add_ref, (void *)(&tmp),
+	                sizeof(zval *) );
+#else
+	object_properties_init( &(obj->std), type );
+#endif
+
+	retval.handle = zend_objects_store_put( obj, NULL, hyperdex_admin_free_storage, NULL TSRMLS_CC );
+	retval.handlers = &hyperclient_object_handlers;
+
+	return retval;
+}
+/* }}} */
+
+
+PHPAPI zend_class_entry *hyperdex_admin_get_exception_base( )
+{
+#if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION < 2)
+	return zend_exception_get_default();
+#else
+	return zend_exception_get_default(TSRMLS_C);
+#endif
+}
+
+void hyperdex_admin_init_exception(TSRMLS_D)
+{
+	zend_class_entry e;
+
+	INIT_CLASS_ENTRY(e, "HyperdexAdminException", NULL);
+	hyperdex_admin_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperdex_admin_get_exception_base(), NULL TSRMLS_CC );
+}
+
 
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION( hyperdex )
 {
 	zend_class_entry ce;
+	zend_class_entry admin_ce;
+
+    printf("aaaaaaa111111,%d\n", __LINE__);
 
 	ZEND_INIT_MODULE_GLOBALS( hyperdex, php_hyperdex_init_globals, NULL );
 
@@ -265,6 +359,20 @@ PHP_MINIT_FUNCTION( hyperdex )
 	hyperclient_object_handlers.clone_obj = NULL;
 
 	hyperclient_init_exception( TSRMLS_C );
+
+    printf("aaaaaaa111111,%d\n", __LINE__);
+
+    INIT_CLASS_ENTRY(admin_ce, "HyperdexAdmin", hyperdex_admin_functions);
+    printf("aaaaaaa111111,%d\n", __LINE__);
+    hyperdex_admin_cmdex_ce = zend_register_internal_class(&admin_ce TSRMLS_CC);
+
+    printf("aaaaaaa111111,%d\n", __LINE__);
+    hyperdex_admin_cmdex_ce->create_object = hyperdex_admin_create_handler;
+    memcpy(&hyperdex_admin_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+    hyperdex_admin_object_handlers.clone_obj = NULL;
+    printf("aaaaaaa111111,%d\n", __LINE__);
+    hyperdex_admin_init_exception(TSRMLS_C);
+    printf("aaaaaaa111111,%d\n", __LINE__);
 
 	return SUCCESS;
 }
@@ -310,6 +418,7 @@ PHP_MINFO_FUNCTION( hyperdex )
 	 */
 }
 /* }}} */
+
 
 
 /* {{{ proto __construct(string host, int port)

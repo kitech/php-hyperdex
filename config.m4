@@ -65,5 +65,5 @@ if test "$PHP_HYPERDEX" != "no"; then
   dnl
   dnl PHP_SUBST(HYPERDEX_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(hyperdex, hyperdex.cc, $ext_shared)
+  PHP_NEW_EXTENSION(hyperdex, php_client.cc php_admin.cc hyperdex.cc, $ext_shared)
 fi
