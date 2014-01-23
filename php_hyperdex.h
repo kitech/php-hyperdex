@@ -78,7 +78,9 @@ PHP_METHOD(hyperclient, del);
 PHP_METHOD(HyperdexAdmin, __construct);
 PHP_METHOD(HyperdexAdmin, __destruct);
 PHP_METHOD(HyperdexAdmin, add_space);
+PHP_METHOD(HyperdexAdmin, rm_space);
 PHP_METHOD(HyperdexAdmin, list_spaces);
+PHP_METHOD(HyperdexAdmin, loop);
 
 /* 
   	Declare any global variables you may need between the BEGIN

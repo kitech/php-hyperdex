@@ -138,6 +138,35 @@ PHP_METHOD(HyperdexAdmin, add_space)
 }
 /* }}} */
 
+/* {{{ proto Boolean rm_space(string space )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, rm_space)
+{
+    hyperdex_admin *hdex;
+    char *space;
+    int space_len;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", space, &space_len) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+	// Get the hyperclient object from PHP's thread storeage.
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hdex = obj->hdex;
+
+    hyperdex_admin_returncode op_status;
+    int64_t op_id = hyperdex_admin_rm_space(hdex, space, &op_status);
+
+    hyperdex_admin_returncode lrc;
+    int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
+
+    printf("aaaaaaa111111,%s,%d, %d\n", __FILE__, __LINE__, lrc);
+    
+    RETURN_TRUE;
+}
+/* }}} */
+
+
 /* {{{ proto Array add_space()
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, list_spaces)
@@ -186,5 +215,12 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
     printf("aaaaaaa111111,%s,%d,\n", __FILE__, __LINE__);
     
     RETURN_ZVAL(rval, 0, 0);
+}
+/* }}} */
+
+/* {{{ proto Boolean loop( )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, loop)
+{
 }
 /* }}} */
