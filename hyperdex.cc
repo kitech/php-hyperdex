@@ -130,8 +130,6 @@ PHP_MINIT_FUNCTION( hyperdex )
 	zend_class_entry client_ce;
 	zend_class_entry admin_ce;
 
-    printf("aaaaaaa111111,%d\n", __LINE__);
-
 	ZEND_INIT_MODULE_GLOBALS( hyperdex, php_hyperdex_init_globals, NULL );
 
 	REGISTER_INI_ENTRIES();
@@ -145,19 +143,15 @@ PHP_MINIT_FUNCTION( hyperdex )
 
 	hyperdex_client_init_exception( TSRMLS_C );
 
-    printf("aaaaaaa111111,%d\n", __LINE__);
 
     INIT_CLASS_ENTRY(admin_ce, "HyperdexAdmin", hyperdex_admin_functions);
-    printf("aaaaaaa111111,%d\n", __LINE__);
     hyperdex_admin_cmdex_ce = zend_register_internal_class(&admin_ce TSRMLS_CC);
 
-    printf("aaaaaaa111111,%d\n", __LINE__);
     hyperdex_admin_cmdex_ce->create_object = hyperdex_admin_create_handler;
     memcpy(&hyperdex_admin_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
     hyperdex_admin_object_handlers.clone_obj = NULL;
-    printf("aaaaaaa111111,%d\n", __LINE__);
+
     hyperdex_admin_init_exception(TSRMLS_C);
-    printf("aaaaaaa111111,%d\n", __LINE__);
 
 	return SUCCESS;
 }

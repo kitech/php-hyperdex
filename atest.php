@@ -17,6 +17,9 @@ var_dump($ret);
 $ret = $adm->error_location();
 var_dump($ret);
 
+$ret = $adm->dump_config();
+var_dump($ret,'------');
+
 sleep(5);
 
 /*

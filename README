@@ -14,7 +14,7 @@ For more information on Hyperdex, please see http://hyperdex.org/
 
 For comments, or issues, please contact bbroerman@bbroerman.net
 
-Note: This code is no longer being maintained. For updated versions, please see https://github.com/bbroerman30/php-hyperdex
+
 
 Installing/Configuring
 ======================
@@ -30,51 +30,51 @@ make install
 
 You can generate a debian package for PHP5, accessible from Apache 2 by running `./mkdeb-apache2.sh` or with `dpkg-buildpackage` or `svn-buildpackage`.
 
-This extension exports a single class, hyperclient (and `HyperDexException` used in case of errors).
+This extension exports two class, HyperdexClient and HyperdexAdmin (and `HyperDexException` used in case of errors).
 
 
 Usage
 ====================
 
-The hyperclient exposes the following methods:
+The HyperdexClient exposes the following methods:
 
-Boolean hyperclient::connect( string host, int port )
-Boolean hyperclient::disconnect()
+Boolean HyperdexClient::connect( string host, int port )
+Boolean HyperdexClient::disconnect()
 
-Boolean hyperclient::put( String space, String key, Array attributes )
-Boolean hyperclient::put_attr( String space, String key, String attr_name, Mixed value )
-Boolean hyperclient::condput( String space, String key, Array conditionals, Array attributes )
+Boolean HyperdexClient::put( String space, String key, Array attributes )
+Boolean HyperdexClient::put_attr( String space, String key, String attr_name, Mixed value )
+Boolean HyperdexClient::condput( String space, String key, Array conditionals, Array attributes )
 
-Boolean hyperclient::lpush( String space, String key, Array attributes )
-Boolean hyperclient::rpush( String space, String key, Array attributes )
+Boolean HyperdexClient::lpush( String space, String key, Array attributes )
+Boolean HyperdexClient::rpush( String space, String key, Array attributes )
 
-Boolean hyperclient::set_add( String space, String key, Array attributes )
-Boolean hyperclient::set_remove( String space, String key, Array attributes )
-Boolean hyperclient::set_union( String space, String key, Array attributes )
-Boolean hyperclient::set_intersect( String space, String key, Array attributes )
+Boolean HyperdexClient::set_add( String space, String key, Array attributes )
+Boolean HyperdexClient::set_remove( String space, String key, Array attributes )
+Boolean HyperdexClient::set_union( String space, String key, Array attributes )
+Boolean HyperdexClient::set_intersect( String space, String key, Array attributes )
 
-Boolean hyperclient::add( String space, String key, Array attributes )
-Boolean hyperclient::sub( String space, String key, Array attributes )
-Boolean hyperclient::mul( String space, String key, Array attributes )
-Boolean hyperclient::div( String space, String key, Array attributes )
-Boolean hyperclient::mod( String space, String key, Array attributes )
-Boolean hyperclient::and( String space, String key, Array attributes )
-Boolean hyperclient::or( String space, String key, Array attributes )
-Boolean hyperclient::xor( String space, String key, Array attributes )
+Boolean HyperdexClient::add( String space, String key, Array attributes )
+Boolean HyperdexClient::sub( String space, String key, Array attributes )
+Boolean HyperdexClient::mul( String space, String key, Array attributes )
+Boolean HyperdexClient::div( String space, String key, Array attributes )
+Boolean HyperdexClient::mod( String space, String key, Array attributes )
+Boolean HyperdexClient::and( String space, String key, Array attributes )
+Boolean HyperdexClient::or( String space, String key, Array attributes )
+Boolean HyperdexClient::xor( String space, String key, Array attributes )
 
-Array hyperclient::search( String space, Array cond_attrs, Array range_attrs )
+Array HyperdexClient::search( String space, Array cond_attrs, Array range_attrs )
 
-Array hyperclient::get( String space, String key )
-Mixed hyperclient::get_attr( String space, String key, String attr_name )
+Array HyperdexClient::get( String space, String key )
+Mixed HyperdexClient::get_attr( String space, String key, String attr_name )
 
-Boolean hyperclient::del( String space, String key )
+Boolean HyperdexClient::del( String space, String key )
 
 
 
 Example:
 =========
 
-$hdp = new hyperclient('127.0.0.1', 1234);
+$hdp = new HyperdexClient('127.0.0.1', 1982);
 
 $val = $hdp->put( 'phonebook','jsmith1', array( 'first' => 'Brad', 'last' => 'Broerman', 'phone' => 123456 ) );
 

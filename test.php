@@ -2,14 +2,27 @@
  //
  // PHP Test script for HyperDex client.
  //
- // Assumes the coordinator is running on port 1234 (as in the simple test in the documentation)
+ // Assumes the coordinator is running on port 1982 (as in the simple test in the documentation)
  //
  // To set up the schema for this test run:
  //
- // hyperdex-coordinator-control --host 127.0.0.1 --port 6970 add-space << EOF
+ // hyperdex add-space --host 127.0.0.1 --port 1982 << EOF
  // space datasettest
- // dimensions key, strval, intval (int64), dblval (float), liststrval (list(string)), listintval (list(int64)), listdblval (list(float)), setstrval (set(string)), setintval (set(int64)), setdblval (set(float)), mapstrval (map(string,string)), mapintval (map(string,int64)), mapdblval (map(string,float))
- // key key auto 1 3
+ // key fkey
+ // attributes
+ // string strval,
+ // int64 intval,
+ // float dblval,
+ // list(string) liststrval,
+ // list(int64) listintval,
+ // list(float) listdblval,
+ // set(string) setstrval,
+ // set(int64) setintval,
+ // set(float) setdblval,
+ // map(string,string) mapstrval,
+ // map(string,int64) mapintval,
+ // map(string,float) mapdblval
+ // 
  // EOF
  //
  //
@@ -18,7 +31,7 @@
 
    echo "Connect \n";
     
-   $hdp = new hyperclient('127.0.0.1', 1234);
+   $hdp = new HyperdexClient('127.0.0.1', 1982);
 
    echo "Put Test\n";
 

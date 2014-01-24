@@ -74,11 +74,15 @@ PHP_METHOD(HyperdexClient, get);
 PHP_METHOD(HyperdexClient, get_attr);
 
 PHP_METHOD(HyperdexClient, del);
+PHP_METHOD(HyperdexClient, error_message);
+PHP_METHOD(HyperdexClient, error_location);
 
 
 /* admin method */
 PHP_METHOD(HyperdexAdmin, __construct);
 PHP_METHOD(HyperdexAdmin, __destruct);
+PHP_METHOD(HyperdexAdmin, dump_config);
+PHP_METHOD(HyperdexAdmin, validate_space);
 PHP_METHOD(HyperdexAdmin, add_space);
 PHP_METHOD(HyperdexAdmin, rm_space);
 PHP_METHOD(HyperdexAdmin, list_spaces);

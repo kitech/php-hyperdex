@@ -44,7 +44,7 @@ zend_object_handlers hyperdex_client_object_handlers;
 /*
  * Helper functions for HyperDex
  */
-int hyperdexLoop( hyperdex_client*  hyperclient, int64_t op_id );
+int hyperdexClientLoop( hyperdex_client*  hyperclient, int64_t op_id );
 
 uint64_t byteArrayToUInt64 (unsigned char *arr, size_t bytes);
 void uint64ToByteArray (uint64_t num, size_t bytes, unsigned char *arr);
@@ -142,6 +142,9 @@ struct hyperdex_client_object {
 	PHP_ME(HyperdexClient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, del,                     	NULL, ZEND_ACC_PUBLIC )
+
+	PHP_ME(HyperdexClient, error_message,                     	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, error_location,                     	NULL, ZEND_ACC_PUBLIC )
 
 	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
@@ -408,7 +411,7 @@ PHP_METHOD( HyperdexClient, put )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -476,7 +479,7 @@ PHP_METHOD( HyperdexClient, put_attr )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -590,7 +593,7 @@ PHP_METHOD( HyperdexClient, condput )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 
 					// Only return TRUE if the operation completed successfully.
 					if( op_status == HYPERDEX_CLIENT_SUCCESS ) {
@@ -678,7 +681,7 @@ PHP_METHOD( HyperdexClient, lpush )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -752,7 +755,7 @@ PHP_METHOD( HyperdexClient, rpush)
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -826,7 +829,7 @@ PHP_METHOD( HyperdexClient, set_add )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -900,7 +903,7 @@ PHP_METHOD( HyperdexClient, set_remove )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -980,7 +983,7 @@ PHP_METHOD( HyperdexClient, set_union )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1060,7 +1063,7 @@ PHP_METHOD( HyperdexClient, set_intersect )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1135,7 +1138,7 @@ PHP_METHOD( HyperdexClient, add )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1210,7 +1213,7 @@ PHP_METHOD( HyperdexClient, sub )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1285,7 +1288,7 @@ PHP_METHOD( HyperdexClient, mul )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1361,7 +1364,7 @@ PHP_METHOD( HyperdexClient, div )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1437,7 +1440,7 @@ PHP_METHOD( HyperdexClient, mod )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1513,7 +1516,7 @@ PHP_METHOD( HyperdexClient, and )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1589,7 +1592,7 @@ PHP_METHOD( HyperdexClient, or )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1665,7 +1668,7 @@ PHP_METHOD( HyperdexClient, xor )
 			if( op_id < 0 ) {
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
-				if( 0 < hyperdexLoop( hdex, op_id ) ) {
+				if( 0 < hyperdexClientLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
@@ -1776,7 +1779,7 @@ PHP_METHOD( HyperdexClient, search )
 
 				array_init(return_value);
 
-				while( 1 == hyperdexLoop( hdex, op_id ) && HYPERDEX_CLIENT_SEARCHDONE != op_status ) {
+				while( 1 == hyperdexClientLoop( hdex, op_id ) && HYPERDEX_CLIENT_SEARCHDONE != op_status ) {
 					if( attrs_sz > 0 ) {
 						zval *temp;
 						ALLOC_INIT_ZVAL(temp);
@@ -1844,7 +1847,7 @@ PHP_METHOD( HyperdexClient, get )
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 
-				if( 1 == hyperdexLoop( hdex, op_id ) ) {
+				if( 1 == hyperdexClientLoop( hdex, op_id ) ) {
 
 					buildArrayFromAttrs( attrs, attrs_sz, return_value );
 
@@ -1893,7 +1896,7 @@ PHP_METHOD( HyperdexClient, get_attr )
 				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 
-				if( 1 == hyperdexLoop( hdex, op_id ) ) {
+				if( 1 == hyperdexClientLoop( hdex, op_id ) ) {
 
 					RETVAL_FALSE;
 
@@ -1950,7 +1953,7 @@ PHP_METHOD( HyperdexClient, del )
 			if( op_id < 0 ) {
 				zend_throw_exception(hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC);
 			} else {
-				if( 1 == hyperdexLoop( hdex, op_id ) ) {
+				if( 1 == hyperdexClientLoop( hdex, op_id ) ) {
 					RETURN_TRUE;
 				}
 			}
@@ -1964,13 +1967,59 @@ PHP_METHOD( HyperdexClient, del )
 }
 /* }}} */
 
+/* {{{ proto String error_message()
+   Get error message info about last hyperdex client operation */
+PHP_METHOD( HyperdexClient, error_message )
+{
+	hyperdex_client*  hdex        = NULL;
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hdex = obj->hdex;
+
+	if( NULL != hdex ) {
+		try {
+            const char *error_message = hyperdex_client_error_message(hdex);
+            if (error_message != NULL) {
+                RETURN_STRING(error_message, 1);
+            }
+		} catch( ... ) {
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"get error message failed", 1 TSRMLS_CC);
+		}
+	}
+
+	RETURN_FALSE;
+}
+/* }}} */
+
+/* {{{ proto Boolean error_location()
+   Get error location info about last hyperdex client operation */
+PHP_METHOD( HyperdexClient, error_location )
+{
+	hyperdex_client*  hdex        = NULL;
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hdex = obj->hdex;
+
+	if( NULL != hdex ) {
+		try {
+            const char *error_location = hyperdex_client_error_location(hdex);
+            if (error_location != NULL) {
+                RETURN_STRING(error_location, 1);
+            }
+		} catch( ... ) {
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"get error location failed", 1 TSRMLS_CC);
+		}
+	}
+
+	RETURN_FALSE;
+}
+/* }}} */
+
 
 /**
  * Call the HyperDex receive loop so that we can get our data.
  * Checks the return code from loop for errors, and throws the necessary
  * exceptions (based on loop status) if there is an error.
  */
-int hyperdexLoop( hyperdex_client* hdex, int64_t op_id )
+int hyperdexClientLoop( hyperdex_client* hdex, int64_t op_id )
 {
 	hyperdex_client_returncode loop_status;
 
