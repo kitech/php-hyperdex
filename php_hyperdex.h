@@ -42,39 +42,41 @@ PHP_RINIT_FUNCTION(hyperdex);
 PHP_RSHUTDOWN_FUNCTION(hyperdex);
 PHP_MINFO_FUNCTION(hyperdex);
 
-PHP_METHOD(hyperclient, __construct);
-PHP_METHOD(hyperclient, __destruct);
-PHP_METHOD(hyperclient, connect);
-PHP_METHOD(hyperclient, disconnect);
+/* client method */
+PHP_METHOD(HyperdexClient, __construct);
+PHP_METHOD(HyperdexClient, __destruct);
+PHP_METHOD(HyperdexClient, connect);
+PHP_METHOD(HyperdexClient, disconnect);
 
-PHP_METHOD(hyperclient, put);
-PHP_METHOD(hyperclient, put_attr);
-PHP_METHOD(hyperclient, condput);
+PHP_METHOD(HyperdexClient, put);
+PHP_METHOD(HyperdexClient, put_attr);
+PHP_METHOD(HyperdexClient, condput);
 
-PHP_METHOD(hyperclient, lpush);
-PHP_METHOD(hyperclient, rpush);
+PHP_METHOD(HyperdexClient, lpush);
+PHP_METHOD(HyperdexClient, rpush);
 
-PHP_METHOD(hyperclient, set_add);
-PHP_METHOD(hyperclient, set_remove);
-PHP_METHOD(hyperclient, set_union);
-PHP_METHOD(hyperclient, set_intersect);
+PHP_METHOD(HyperdexClient, set_add);
+PHP_METHOD(HyperdexClient, set_remove);
+PHP_METHOD(HyperdexClient, set_union);
+PHP_METHOD(HyperdexClient, set_intersect);
 
-PHP_METHOD(hyperclient, add);
-PHP_METHOD(hyperclient, sub);
-PHP_METHOD(hyperclient, mul);
-PHP_METHOD(hyperclient, div);
-PHP_METHOD(hyperclient, mod);
-PHP_METHOD(hyperclient, and);
-PHP_METHOD(hyperclient, or);
-PHP_METHOD(hyperclient, xor);
+PHP_METHOD(HyperdexClient, add);
+PHP_METHOD(HyperdexClient, sub);
+PHP_METHOD(HyperdexClient, mul);
+PHP_METHOD(HyperdexClient, div);
+PHP_METHOD(HyperdexClient, mod);
+PHP_METHOD(HyperdexClient, and);
+PHP_METHOD(HyperdexClient, or);
+PHP_METHOD(HyperdexClient, xor);
     
-PHP_METHOD(hyperclient, search);
-PHP_METHOD(hyperclient, get);
-PHP_METHOD(hyperclient, get_attr);
+PHP_METHOD(HyperdexClient, search);
+PHP_METHOD(HyperdexClient, get);
+PHP_METHOD(HyperdexClient, get_attr);
 
-PHP_METHOD(hyperclient, del);
+PHP_METHOD(HyperdexClient, del);
 
 
+/* admin method */
 PHP_METHOD(HyperdexAdmin, __construct);
 PHP_METHOD(HyperdexAdmin, __destruct);
 PHP_METHOD(HyperdexAdmin, add_space);

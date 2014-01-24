@@ -38,10 +38,10 @@ ZEND_DECLARE_MODULE_GLOBALS(hyperdex)
 /*
  * Class entries for the hyperdex client class and the exception
  */
-extern zend_class_entry* cmdex_ce;
-extern zend_class_entry* hyperclient_ce_exception;
+extern zend_class_entry* hyperdex_client_cmdex_ce;
+extern zend_class_entry* hyperdex_client_ce_exception;
 
-extern zend_object_handlers hyperclient_object_handlers;
+extern zend_object_handlers hyperdex_client_object_handlers;
 
 /*
  * Class entries for the hyperdex admin class and the exception
@@ -52,11 +52,11 @@ extern zend_class_entry* hyperdex_admin_ce_exception;
 extern zend_object_handlers hyperdex_admin_object_handlers;
 
 
-/* {{{ hyperdex_functions[]
+/* {{{ hyperdex_client_functions[]
  *
- * Every user visible function must have an entry in hyperdex_functions[].
+ * Every user visible function must have an entry in hyperdex_client_functions[].
  */
-extern zend_function_entry hyperdex_functions[];
+extern zend_function_entry hyperdex_client_functions[];
 /* }}} */
 
 
@@ -75,7 +75,7 @@ zend_module_entry hyperdex_module_entry = {
 	STANDARD_MODULE_HEADER,
 #endif
 	"hyperdex",
-	hyperdex_functions,
+	NULL, /* hyperdex_client_functions,*/
 	PHP_MINIT(hyperdex),
 	PHP_MSHUTDOWN(hyperdex),
 	PHP_RINIT(hyperdex),		/* Replace with NULL if there's nothing to do at request start */
@@ -108,10 +108,10 @@ static void php_hyperdex_init_globals(zend_hyperdex_globals *hyperdex_globals)
 
 /* {{{ hyperdex_client_storage_bridge
  */
-extern void hyperclient_free_storage(void *object TSRMLS_DC);
-extern zend_object_value hyperclient_create_handler(zend_class_entry *type TSRMLS_DC);
-extern PHPAPI zend_class_entry *hyperclient_get_exception_base( );
-extern void hyperclient_init_exception(TSRMLS_D);
+extern void hyperdex_client_free_storage(void *object TSRMLS_DC);
+extern zend_object_value hyperdex_client_create_handler(zend_class_entry *type TSRMLS_DC);
+extern PHPAPI zend_class_entry *hyperdex_client_get_exception_base( );
+extern void hyperdex_client_init_exception(TSRMLS_D);
 /* }}} */
 
 /* {{{ hyperdex_admin_storage_bridge
@@ -127,7 +127,7 @@ extern void hyperdex_admin_init_exception(TSRMLS_D);
  */
 PHP_MINIT_FUNCTION( hyperdex )
 {
-	zend_class_entry ce;
+	zend_class_entry client_ce;
 	zend_class_entry admin_ce;
 
     printf("aaaaaaa111111,%d\n", __LINE__);
@@ -136,14 +136,14 @@ PHP_MINIT_FUNCTION( hyperdex )
 
 	REGISTER_INI_ENTRIES();
 
-	INIT_CLASS_ENTRY( ce, "hyperclient", hyperdex_functions );
-	cmdex_ce = zend_register_internal_class(&ce TSRMLS_CC);
+	INIT_CLASS_ENTRY( client_ce, "HyperdexClient", hyperdex_client_functions );
+	hyperdex_client_cmdex_ce = zend_register_internal_class(&client_ce TSRMLS_CC);
 
-	cmdex_ce->create_object = hyperclient_create_handler;
-	memcpy( &hyperclient_object_handlers, zend_get_std_object_handlers(), sizeof( zend_object_handlers ) );
-	hyperclient_object_handlers.clone_obj = NULL;
+	hyperdex_client_cmdex_ce->create_object = hyperdex_client_create_handler;
+	memcpy( &hyperdex_client_object_handlers, zend_get_std_object_handlers(), sizeof( zend_object_handlers ) );
+	hyperdex_client_object_handlers.clone_obj = NULL;
 
-	hyperclient_init_exception( TSRMLS_C );
+	hyperdex_client_init_exception( TSRMLS_C );
 
     printf("aaaaaaa111111,%d\n", __LINE__);
 

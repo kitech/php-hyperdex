@@ -35,10 +35,10 @@
 /*
  * Class entries for the hyperdex client class and the exception
  */
-zend_class_entry* cmdex_ce;
-zend_class_entry* hyperclient_ce_exception;
+zend_class_entry* hyperdex_client_cmdex_ce;
+zend_class_entry* hyperdex_client_ce_exception;
 
-zend_object_handlers hyperclient_object_handlers;
+zend_object_handlers hyperdex_client_object_handlers;
 
 
 /*
@@ -96,62 +96,62 @@ static int php_array_number_compare(const void *a, const void *b TSRMLS_DC);
 
 
 /*
- * Allows PHP to store the hyperclient object inbetween calls
+ * Allows PHP to store the hyperdex_client object inbetween calls
  */
-struct hyperclient_object {
+struct hyperdex_client_object {
 	zend_object  std;
 	hyperdex_client* hdex;
-	hyperclient_object() : hdex(NULL) {}
+	hyperdex_client_object() : hdex(NULL) {}
 };
 
 
-/* {{{ hyperdex_functions[]
+/* {{{ hyperdex_client_functions[]
  *
- * Every user visible function must have an entry in hyperdex_functions[].
+ * Every user visible function must have an entry in hyperdex_client_functions[].
  */
-// extern zend_function_entry hyperdex_functions[];
-/* const static*/ zend_function_entry hyperdex_functions[] = {
-	PHP_ME(hyperclient, __construct,                NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR )
-	PHP_ME(hyperclient, __destruct,                 NULL, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR )
-	PHP_ME(hyperclient, connect,                 	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, disconnect,              	NULL, ZEND_ACC_PUBLIC )
+// extern zend_function_entry hyperdex_client_functions[];
+/* const static*/ zend_function_entry hyperdex_client_functions[] = {
+	PHP_ME(HyperdexClient, __construct,                NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR )
+	PHP_ME(HyperdexClient, __destruct,                 NULL, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR )
+	PHP_ME(HyperdexClient, connect,                 	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, disconnect,              	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(hyperclient, put,                      	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, put_attr,                 	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, condput,                  	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, put,                      	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, put_attr,                 	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, condput,                  	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(hyperclient, lpush,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, rpush,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, lpush,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, rpush,                    	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(hyperclient, set_add,                  	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, set_remove,                	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, set_union,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, set_intersect,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, set_add,                  	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, set_remove,                	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, set_union,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, set_intersect,                 NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(hyperclient, add,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, sub,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, mul,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, div,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, mod,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, and,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, or,                      	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, xor,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, add,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, sub,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, mul,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, div,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, mod,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, and,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, or,                      	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, xor,                    	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(hyperclient, search,                     NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, get,	                    NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(hyperclient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, search,                     NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, get,	                    NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(hyperclient, del,                     	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, del,                     	NULL, ZEND_ACC_PUBLIC )
 
 	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
 /* }}} */
 
-/* {{{ hyperclient_free_storage
+/* {{{ hyperdex_client_free_storage
 */
-void hyperclient_free_storage(void *object TSRMLS_DC)
+void hyperdex_client_free_storage(void *object TSRMLS_DC)
 {
-	hyperclient_object *obj = (hyperclient_object *)object;
+	hyperdex_client_object *obj = (hyperdex_client_object *)object;
 	delete obj->hdex;
 
 	zend_hash_destroy( obj->std.properties );
@@ -161,15 +161,15 @@ void hyperclient_free_storage(void *object TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ hyperclient_create_handler
+/* {{{ hyperdex_client_create_handler
 */
-zend_object_value hyperclient_create_handler(zend_class_entry *type TSRMLS_DC)
+zend_object_value hyperdex_client_create_handler(zend_class_entry *type TSRMLS_DC)
 {
 	zval *tmp;
 	zend_object_value retval;
 
-	hyperclient_object *obj = (hyperclient_object *)emalloc( sizeof( hyperclient_object ) );
-	memset( obj, 0, sizeof( hyperclient_object ) );
+	hyperdex_client_object *obj = (hyperdex_client_object *)emalloc( sizeof( hyperdex_client_object ) );
+	memset( obj, 0, sizeof( hyperdex_client_object ) );
 	obj->std.ce = type;
 
 	ALLOC_HASHTABLE(obj->std.properties);
@@ -184,15 +184,15 @@ zend_object_value hyperclient_create_handler(zend_class_entry *type TSRMLS_DC)
 	object_properties_init( &(obj->std), type );
 #endif
 
-	retval.handle = zend_objects_store_put( obj, NULL, hyperclient_free_storage, NULL TSRMLS_CC );
-	retval.handlers = &hyperclient_object_handlers;
+	retval.handle = zend_objects_store_put( obj, NULL, hyperdex_client_free_storage, NULL TSRMLS_CC );
+	retval.handlers = &hyperdex_client_object_handlers;
 
 	return retval;
 }
 /* }}} */
 
 
-PHPAPI zend_class_entry *hyperclient_get_exception_base( )
+PHPAPI zend_class_entry *hyperdex_client_get_exception_base( )
 {
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION < 2)
 	return zend_exception_get_default();
@@ -201,18 +201,18 @@ PHPAPI zend_class_entry *hyperclient_get_exception_base( )
 #endif
 }
 
-void hyperclient_init_exception(TSRMLS_D)
+void hyperdex_client_init_exception(TSRMLS_D)
 {
 	zend_class_entry e;
 
 	INIT_CLASS_ENTRY(e, "HyperdexException", NULL);
-	hyperclient_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperclient_get_exception_base(), NULL TSRMLS_CC );
+	hyperdex_client_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperdex_client_get_exception_base(), NULL TSRMLS_CC );
 }
 
 
 /* {{{ proto __construct(string host, int port)
    Construct a HyperDex Client instance, and connect to a server. */
-PHP_METHOD( hyperclient, __construct )
+PHP_METHOD( HyperdexClient, __construct )
 {
 	hyperdex_client*  hdex        = NULL;
 	char*         host        = NULL;
@@ -227,27 +227,26 @@ PHP_METHOD( hyperclient, __construct )
 
 	// Validate them, and throw an exception if there's an issue.
 	if( NULL == host || 0 >= host_len ) {
-		zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
+		zend_throw_exception( hyperdex_client_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
 	}
 
 	if( 0 >= port || 65536 <= port ) {
-		zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
+		zend_throw_exception( hyperdex_client_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
 	}
 
-	// Now try to create the hyperclient (and connect). Throw an exception if there are errors.
+	// Now try to create the hyperdex_client (and connect). Throw an exception if there are errors.
 	try {
-		// hdex = new hyperclient( host, port );
         hdex = hyperdex_client_create(host, port);
 		if( NULL == hdex ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
 		}
 	} catch( ... ) {
 		hdex = NULL;
-		zend_throw_exception( hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
+		zend_throw_exception( hyperdex_client_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
 	}
 
 	// If all is good, then set the PHP thread's storage object
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object(object TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object(object TSRMLS_CC );
 	obj->hdex = hdex;
 
 }
@@ -257,7 +256,7 @@ PHP_METHOD( hyperclient, __construct )
 
 /* {{{ proto Boolean __destruct( )
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(hyperclient, __destruct)
+PHP_METHOD(HyperdexClient, __destruct)
 {
 }
 /* }}} *
@@ -265,7 +264,7 @@ PHP_METHOD(hyperclient, __destruct)
 
 /* {{{ proto Boolean connect(string host, int port)
    Connect to a HyperDex server */
-PHP_METHOD( hyperclient, connect )
+PHP_METHOD( HyperdexClient, connect )
 {
 	hyperdex_client*  hdex        = NULL;
 	char*         host        = NULL;
@@ -279,17 +278,17 @@ PHP_METHOD( hyperclient, connect )
 
 	// Validate them, and throw an exception if there's an issue.
 	if( NULL == host || 0 >= host_len ) {
-		zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
+		zend_throw_exception( hyperdex_client_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
 		RETURN_FALSE;
 	}
 
 	if( 0 >= port || 65536 <= port ) {
-		zend_throw_exception( hyperclient_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
+		zend_throw_exception( hyperdex_client_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
 		RETURN_FALSE;
 	}
 
-	// Get the hyperclient object from PHP's thread storeage.
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	// Get the hyperdex_client object from PHP's thread storeage.
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	// If we get it, we need to delete the old one and create the new one.
@@ -298,34 +297,33 @@ PHP_METHOD( hyperclient, connect )
 
 		try {
 
-			// Instantiate the hyperclient, and try to connect.
-			// hdex = new hyperclient( host, port );
+			// Instantiate the hyperdex_client, and try to connect.
             hdex = hyperdex_client_create(host, port);
 
 			if( NULL == hdex ) {
-				zend_throw_exception(hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
+				zend_throw_exception(hyperdex_client_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
 			}
 
 		} catch( ... ) {
 			hdex = NULL;
-			zend_throw_exception(hyperclient_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
 		}
 
 		// Push it back to the storage object, and return success.
 		obj->hdex = hdex;
 	}
 
-	// Return success if we set a valid hyperclient
+	// Return success if we set a valid hyperdex_client
 	RETURN_BOOL( hdex != NULL );
 }
 /* }}} */
 
 /* {{{ proto Boolean disconnect( )
    Disconnect from the HyperDex server */
-PHP_METHOD( hyperclient, disconnect )
+PHP_METHOD( HyperdexClient, disconnect )
 {
 	hyperdex_client*        hdex = NULL;
-	hyperclient_object* obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object * obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 
 	hdex = obj->hdex;
 
@@ -341,7 +339,7 @@ PHP_METHOD( hyperclient, disconnect )
 
 /* {{{ proto Boolean put(string space, String key, Array attributes)
    Sets one or more attributes for a given space and key. */
-PHP_METHOD( hyperclient, put )
+PHP_METHOD( HyperdexClient, put )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -365,8 +363,8 @@ PHP_METHOD( hyperclient, put )
 	// Set our initial return value to false. Will be set to true if successful.
 	RETVAL_TRUE;
 
-	// Get the hyperclient object from PHP's thread storeage.
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	// Get the hyperdex_client object from PHP's thread storeage.
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	// If we have one, perform the operation.
@@ -377,7 +375,6 @@ PHP_METHOD( hyperclient, put )
 			arr_hash = Z_ARRVAL_P( arr );
 
 			// Allocate the HyperDex attribute array
-			// attr = new hyperclient_attribute[zend_hash_num_elements( arr_hash )];
             attr = new hyperdex_client_attribute[zend_hash_num_elements( arr_hash )];
 
 			// Convert each entry (attribute) in the input array into an element in the hyperdex_client_attribute array.
@@ -402,14 +399,14 @@ PHP_METHOD( hyperclient, put )
 				}
 			}
 
-			// Now, call the HyperClient to do the put of the attribute array.
+			// Now, call the Hyperdex_Client to do the put of the attribute array.
 			hyperdex_client_returncode op_status;
 
 			int64_t op_id = hyperdex_client_put(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			// Check the return code. Throw an exception and return false if there is an error.
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -417,7 +414,7 @@ PHP_METHOD( hyperclient, put )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -434,7 +431,7 @@ PHP_METHOD( hyperclient, put )
 
 /* {{{ proto Boolean put_attr(string space, string key, string attribute, Mixed value )
        Sets a given attribute for a given record (as defined by key) for a given space. */
-PHP_METHOD( hyperclient, put_attr )
+PHP_METHOD( HyperdexClient, put_attr )
 {
 	hyperdex_client*            hdex          = NULL;
 	char*                   scope         = NULL;
@@ -453,8 +450,8 @@ PHP_METHOD( hyperclient, put_attr )
 		RETURN_FALSE;
 	}
 
-	// Get the hyperclient object from PHP's thread storeage.
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
+	// Get the hyperdex_client object from PHP's thread storeage.
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
 	// Set our intial return value to false (it will be set to true if the operation was successful)
@@ -468,16 +465,16 @@ PHP_METHOD( hyperclient, put_attr )
 			hyperdex_client_returncode op_status;
 			enum hyperdatatype expected_type = hyperdex_client_attribute_type(hdex, scope, key, &op_status);
 
-			// And convert the ZVAL into the hyperclient_attribute.
+			// And convert the ZVAL into the hyperdex_client_attribute.
 			attr  = new hyperdex_client_attribute();
 			buildAttrFromZval( val, attr_name, attr, expected_type );
 
-			// Now, call the HyperClient to do the put of the attribute array.
+			// Now, call the Hyperdex_Client to do the put of the attribute array.
 			int64_t op_id = hyperdex_client_put(hdex, scope, key, key_len, attr, 1, &op_status);
 
 			// Check the return code. Throw an exception and return false if there is an error.
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -485,7 +482,7 @@ PHP_METHOD( hyperclient, put_attr )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"Set_attr failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Set_attr failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -503,7 +500,7 @@ PHP_METHOD( hyperclient, put_attr )
 
 /* {{{ proto Boolean condput(string space, string key, Array conditionals, Array attributes)
    Update the attributes for a key if and only if the existing attribute values match the conditionals */
-PHP_METHOD( hyperclient, condput )
+PHP_METHOD( HyperdexClient, condput )
 {
 	hyperdex_client*            hdex          = NULL;
 	char*                   scope         = NULL;
@@ -530,15 +527,15 @@ PHP_METHOD( hyperclient, condput )
 		RETURN_FALSE;
 	}
 
-	// Get the hyperclient object from PHP's thread storeage.
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	// Get the hyperdex_client object from PHP's thread storeage.
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	// If we have one, perform the operation.
 	if( NULL != hdex ) {
 		try {
 
-			// Start by iterating through the conditional array, and building a list of hyperclient_attributes from the zvals.
+			// Start by iterating through the conditional array, and building a list of hyperdex_client_attributes from the zvals.
 			arr_hash = Z_ARRVAL_P(cond);
 
 			cond_attr = new hyperdex_client_attribute_check[zend_hash_num_elements( arr_hash )];
@@ -560,7 +557,7 @@ PHP_METHOD( hyperclient, condput )
 				}
 			}
 
-			// Then iterate across the attr array, and build a list of hyperclient_attributes from the zvals.
+			// Then iterate across the attr array, and build a list of hyperdex_client_attributes from the zvals.
 			arr_hash = Z_ARRVAL_P(attr);
 
 			val_attr = new hyperdex_client_attribute[zend_hash_num_elements( arr_hash )];
@@ -591,7 +588,7 @@ PHP_METHOD( hyperclient, condput )
         
 			// and check for errors / exception.
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 
@@ -605,7 +602,7 @@ PHP_METHOD( hyperclient, condput )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -628,7 +625,7 @@ PHP_METHOD( hyperclient, condput )
 
 /* {{{ proto Boolean lpush(String space, String key, Array attributes)
    Pushes the specified object to the head of the list of each attribute specified by the request.  */
-PHP_METHOD( hyperclient, lpush )
+PHP_METHOD( HyperdexClient, lpush )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -648,7 +645,7 @@ PHP_METHOD( hyperclient, lpush )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -679,14 +676,14 @@ PHP_METHOD( hyperclient, lpush )
 			int64_t op_id = hyperdex_client_list_lpush(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -702,7 +699,7 @@ PHP_METHOD( hyperclient, lpush )
 
 /* {{{ proto Boolean rpush(String space, String key, Array attributes)
    Pushes the specified object to the tail of the list of each attribute specified by the request.  */
-PHP_METHOD(hyperclient,rpush)
+PHP_METHOD( HyperdexClient, rpush)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -722,7 +719,7 @@ PHP_METHOD(hyperclient,rpush)
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -753,7 +750,7 @@ PHP_METHOD(hyperclient,rpush)
 			int64_t op_id = hyperdex_client_list_rpush(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -761,7 +758,7 @@ PHP_METHOD(hyperclient,rpush)
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -776,7 +773,7 @@ PHP_METHOD(hyperclient,rpush)
 
 /* {{{ proto Boolean set_add(string space, String key, Array attributes)
    Adds a value to one or more sets for a given space and key if the value is not already in the set. */
-PHP_METHOD( hyperclient, set_add )
+PHP_METHOD( HyperdexClient, set_add )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -796,7 +793,7 @@ PHP_METHOD( hyperclient, set_add )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -827,14 +824,14 @@ PHP_METHOD( hyperclient, set_add )
 			int64_t op_id = hyperdex_client_set_add(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
 				}
 			}
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -850,7 +847,7 @@ PHP_METHOD( hyperclient, set_add )
 
 /* {{{ proto Boolean set_remove(string space, String key, Array attributes)
    Removes a value to one or more sets for a given space and key if the value is in the set. */
-PHP_METHOD( hyperclient, set_remove )
+PHP_METHOD( HyperdexClient, set_remove )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -870,7 +867,7 @@ PHP_METHOD( hyperclient, set_remove )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -901,7 +898,7 @@ PHP_METHOD( hyperclient, set_remove )
 			int64_t op_id = hyperdex_client_set_remove(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -909,7 +906,7 @@ PHP_METHOD( hyperclient, set_remove )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -927,7 +924,7 @@ PHP_METHOD( hyperclient, set_remove )
    Performs a set union with one or more sets for a given space and key. Sets will be defined by the
    key of the passed in array, with the set to be unioned with the stored set passed as the value.
    The union will be atomic without interference from other operations. */
-PHP_METHOD( hyperclient, set_union )
+PHP_METHOD( HyperdexClient, set_union )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -947,7 +944,7 @@ PHP_METHOD( hyperclient, set_union )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -981,7 +978,7 @@ PHP_METHOD( hyperclient, set_union )
 			int64_t op_id = hyperdex_client_set_union(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -989,7 +986,7 @@ PHP_METHOD( hyperclient, set_union )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1007,7 +1004,7 @@ PHP_METHOD( hyperclient, set_union )
    Performs a set intersection with one or more sets for a given space and key. Sets will be defined by the
    key of the passed in array, with the set to be unioned with the stored set passed as the value.
    The union will be atomic without interference from other operations. */
-PHP_METHOD( hyperclient, set_intersect )
+PHP_METHOD( HyperdexClient, set_intersect )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1027,7 +1024,7 @@ PHP_METHOD( hyperclient, set_intersect )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1061,7 +1058,7 @@ PHP_METHOD( hyperclient, set_intersect )
 			int64_t op_id = hyperdex_client_set_intersect(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1069,7 +1066,7 @@ PHP_METHOD( hyperclient, set_intersect )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1085,7 +1082,7 @@ PHP_METHOD( hyperclient, set_intersect )
 
 /* {{{ proto Boolean add(string space, String key, Array attributes)
    Atomically adds integers to one or more attributes for a given space and key. */
-PHP_METHOD( hyperclient, add )
+PHP_METHOD( HyperdexClient, add )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1105,7 +1102,7 @@ PHP_METHOD( hyperclient, add )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1136,7 +1133,7 @@ PHP_METHOD( hyperclient, add )
 			int64_t op_id = hyperdex_client_atomic_add(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1144,7 +1141,7 @@ PHP_METHOD( hyperclient, add )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"add failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1160,7 +1157,7 @@ PHP_METHOD( hyperclient, add )
 
 /* {{{ proto Boolean sub(string space, String key, Array attributes)
    Atomically subtracts integers to one or more attributes for a given space and key. */
-PHP_METHOD( hyperclient, sub )
+PHP_METHOD( HyperdexClient, sub )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1180,7 +1177,7 @@ PHP_METHOD( hyperclient, sub )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1211,7 +1208,7 @@ PHP_METHOD( hyperclient, sub )
 			int64_t op_id = hyperdex_client_atomic_sub(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1219,7 +1216,7 @@ PHP_METHOD( hyperclient, sub )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"sub failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"sub failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1235,7 +1232,7 @@ PHP_METHOD( hyperclient, sub )
 
 /* {{{ proto Boolean mul(string space, String key, Array attributes)
    Atomically multiplies integers to one or more attributes for a given space and key. */
-PHP_METHOD( hyperclient, mul )
+PHP_METHOD( HyperdexClient, mul )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1255,7 +1252,7 @@ PHP_METHOD( hyperclient, mul )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1286,7 +1283,7 @@ PHP_METHOD( hyperclient, mul )
 			int64_t op_id = hyperdex_client_atomic_mul(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1294,7 +1291,7 @@ PHP_METHOD( hyperclient, mul )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1311,7 +1308,7 @@ PHP_METHOD( hyperclient, mul )
 /* {{{ proto Boolean div(string space, String key, Array attributes)
    Atomically divides the values of one or more attributes for a given space and key by the
    divisor in the input array for that attribute. */
-PHP_METHOD( hyperclient, div )
+PHP_METHOD( HyperdexClient, div )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1331,7 +1328,7 @@ PHP_METHOD( hyperclient, div )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1362,7 +1359,7 @@ PHP_METHOD( hyperclient, div )
 			int64_t op_id = hyperdex_client_atomic_div(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1370,7 +1367,7 @@ PHP_METHOD( hyperclient, div )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1387,7 +1384,7 @@ PHP_METHOD( hyperclient, div )
 /* {{{ proto Boolean mod(string space, String key, Array attributes)
    Atomically divides the values of one or more attributes for a given space and key by the
    divisor in the input array for that attribute, and stores the remainder. */
-PHP_METHOD( hyperclient, mod )
+PHP_METHOD( HyperdexClient, mod )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1407,7 +1404,7 @@ PHP_METHOD( hyperclient, mod )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1438,7 +1435,7 @@ PHP_METHOD( hyperclient, mod )
 			int64_t op_id = hyperdex_client_atomic_mod(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1446,7 +1443,7 @@ PHP_METHOD( hyperclient, mod )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1463,7 +1460,7 @@ PHP_METHOD( hyperclient, mod )
 /* {{{ proto Boolean and(string space, String key, Array attributes)
    Atomically stores the bitwise AND of one or more attributes for a given space and key and
    the integer passed in the input array for that attribute. */
-PHP_METHOD( hyperclient, and )
+PHP_METHOD( HyperdexClient, and )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1483,7 +1480,7 @@ PHP_METHOD( hyperclient, and )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1514,7 +1511,7 @@ PHP_METHOD( hyperclient, and )
 			int64_t op_id = hyperdex_client_atomic_and(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1522,7 +1519,7 @@ PHP_METHOD( hyperclient, and )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1539,7 +1536,7 @@ PHP_METHOD( hyperclient, and )
 /* {{{ proto Boolean or(string space, String key, Array attributes)
    Atomically stores the bitwise OR of one or more attributes for a given space and key and the
    integer passed in the input array for that attribute. */
-PHP_METHOD( hyperclient, or )
+PHP_METHOD( HyperdexClient, or )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1559,7 +1556,7 @@ PHP_METHOD( hyperclient, or )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1590,7 +1587,7 @@ PHP_METHOD( hyperclient, or )
 			int64_t op_id = hyperdex_client_atomic_or(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1598,7 +1595,7 @@ PHP_METHOD( hyperclient, or )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1615,7 +1612,7 @@ PHP_METHOD( hyperclient, or )
 /* {{{ proto Boolean xor(string space, String key, Array attributes)
    Atomically stores the bitwise XOR (Exclusive OR of one or more attributes for a given space and key and
    the integer passed in the input array for that attribute. */
-PHP_METHOD( hyperclient, xor )
+PHP_METHOD( HyperdexClient, xor )
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1635,7 +1632,7 @@ PHP_METHOD( hyperclient, xor )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	RETVAL_FALSE;
@@ -1666,7 +1663,7 @@ PHP_METHOD( hyperclient, xor )
 			int64_t op_id = hyperdex_client_atomic_xor(hdex, scope, key, key_len, attr, attr_cnt, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 				if( 0 < hyperdexLoop( hdex, op_id ) ) {
 					RETVAL_TRUE;
@@ -1674,7 +1671,7 @@ PHP_METHOD( hyperclient, xor )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"mul failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1691,7 +1688,7 @@ PHP_METHOD( hyperclient, xor )
 /* {{{ proto Mixed search(string space, Array equality_conditionals, Array range_conditionals)
    Searches for records with attributes matching the equality_conditionals and the range_conditionals.
    Returns an array of the matching records. */
-PHP_METHOD( hyperclient, search )
+PHP_METHOD( HyperdexClient, search )
 {
 	hyperdex_client*             hdex         = NULL;
 	char*                    scope        = NULL;
@@ -1712,7 +1709,7 @@ PHP_METHOD( hyperclient, search )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	if( NULL != hdex ) {
@@ -1774,7 +1771,7 @@ PHP_METHOD( hyperclient, search )
 
 			if( op_id < 0 ) {
 				freeAttrCheckVals( cond_attr, cond_attr_cnt );
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 
 				array_init(return_value);
@@ -1800,9 +1797,9 @@ PHP_METHOD( hyperclient, search )
 			}
 
 		} catch( int& e ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"Bad Range Check", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Bad Range Check", 1 TSRMLS_CC );
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"Search failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Search failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1818,7 +1815,7 @@ PHP_METHOD( hyperclient, search )
 
 /* {{{ proto Array get(string space, string key)
    Returns the record identified by key from the specified space (table) */
-PHP_METHOD( hyperclient, get )
+PHP_METHOD( HyperdexClient, get )
 {
 	hyperdex_client*  hdex        = NULL;
 	char*         scope       = NULL;
@@ -1831,7 +1828,7 @@ PHP_METHOD( hyperclient, get )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
 	if( NULL != hdex ) {
@@ -1844,7 +1841,7 @@ PHP_METHOD( hyperclient, get )
 			int64_t op_id = hyperdex_client_get(hdex, scope, key, key_len, &op_status, (const hyperdex_client_attribute**)&attrs, &attrs_sz);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 
 				if( 1 == hyperdexLoop( hdex, op_id ) ) {
@@ -1857,7 +1854,7 @@ PHP_METHOD( hyperclient, get )
 				}
 			}
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"get failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"get failed", 1 TSRMLS_CC );
 		}
 	}
 	RETURN_FALSE;
@@ -1866,7 +1863,7 @@ PHP_METHOD( hyperclient, get )
 
 /* {{{ proto Mixed get(string space, string key, string attribute)
    Returns the named attribute from the record identified by key from the specified space (table) */
-PHP_METHOD( hyperclient, get_attr )
+PHP_METHOD( HyperdexClient, get_attr )
 {
 	hyperdex_client*  hdex          = NULL;
 	char*         scope         = NULL;
@@ -1880,7 +1877,7 @@ PHP_METHOD( hyperclient, get_attr )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	if( NULL != hdex ) {
@@ -1893,7 +1890,7 @@ PHP_METHOD( hyperclient, get_attr )
 			int64_t op_id = hyperdex_client_get(hdex, scope, key, key_len, &op_status, (const hyperdex_client_attribute**)&attrs, &attrs_sz);
 
 			if( op_id < 0 ) {
-				zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
+				zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC );
 			} else {
 
 				if( 1 == hyperdexLoop( hdex, op_id ) ) {
@@ -1916,7 +1913,7 @@ PHP_METHOD( hyperclient, get_attr )
 				}
 			}
 		} catch( ... ) {
-			zend_throw_exception( hyperclient_ce_exception, (char*)"get failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"get failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1926,7 +1923,7 @@ PHP_METHOD( hyperclient, get_attr )
 
 /* {{{ proto Boolean del(string space, string key)
    Delete the record identified by key from the specified space */
-PHP_METHOD( hyperclient, del )
+PHP_METHOD( HyperdexClient, del )
 {
 	hyperdex_client*  hdex        = NULL;
 	char*         scope       = NULL;
@@ -1938,7 +1935,7 @@ PHP_METHOD( hyperclient, del )
 		RETURN_FALSE;
 	}
 
-	hyperclient_object *obj = (hyperclient_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
 	hdex = obj->hdex;
 
 	if( NULL != hdex ) {
@@ -1951,7 +1948,7 @@ PHP_METHOD( hyperclient, del )
 			int64_t op_id = hyperdex_client_del(hdex, scope, key, key_len, &op_status);
 
 			if( op_id < 0 ) {
-				zend_throw_exception(hyperclient_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC);
+				zend_throw_exception(hyperdex_client_ce_exception, HyperDexErrorToMsg( op_status ), op_status TSRMLS_CC);
 			} else {
 				if( 1 == hyperdexLoop( hdex, op_id ) ) {
 					RETURN_TRUE;
@@ -1959,7 +1956,7 @@ PHP_METHOD( hyperclient, del )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception(hyperclient_ce_exception, (char*)"delete failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"delete failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -1981,7 +1978,7 @@ int hyperdexLoop( hyperdex_client* hdex, int64_t op_id )
 
 	if( loop_id < 0 ) {
 		if( HYPERDEX_CLIENT_NONEPENDING != loop_status ) {
-			zend_throw_exception( hyperclient_ce_exception, HyperDexErrorToMsg( loop_status ), loop_status TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( loop_status ), loop_status TSRMLS_CC );
 			return loop_status;
 		}
 
@@ -1990,7 +1987,7 @@ int hyperdexLoop( hyperdex_client* hdex, int64_t op_id )
 
 	if( op_id != loop_id ) {
 		// This is most certainly a bug for this simple code.
-		zend_throw_exception( hyperclient_ce_exception, (char*)"Loop ID not equal Op ID", 2 TSRMLS_CC );
+		zend_throw_exception( hyperdex_client_ce_exception, (char*)"Loop ID not equal Op ID", 2 TSRMLS_CC );
 		return -1;
 	}
 
@@ -2788,8 +2785,8 @@ int isArrayHashTable( zval* array )
 /**
  * Build a HyperDex ATTR structure from a PHP ZVAL structure.
  */
-template<class hyperclient_attributeT>
-void _buildAttrFromZval( zval* data, char* arr_key, hyperclient_attributeT* attr, enum hyperdatatype expected_type )
+template<class hyperdex_client_attributeT>
+void _buildAttrFromZval( zval* data, char* arr_key, hyperdex_client_attributeT* attr, enum hyperdatatype expected_type )
 {
 
 	zval temp = *data;
@@ -3026,7 +3023,7 @@ void buildZvalFromAttr( hyperdex_client_attribute* attr, zval* data )
 		byteArrayToMapInt64Float( (unsigned char*)attr->value, attr->value_sz, data );
 
 	} else {
-		zend_throw_exception(hyperclient_ce_exception, (char*)"Unknown data type", attr->datatype TSRMLS_CC);
+		zend_throw_exception(hyperdex_client_ce_exception, (char*)"Unknown data type", attr->datatype TSRMLS_CC);
 	}
 }
 
@@ -3063,7 +3060,7 @@ void buildRangeFromZval( zval* data, char* arr_key, hyperdex_client_attribute_ch
 				fattr->predicate=HYPERPREDICATE_GREATER_EQUAL;
 			} else if (cntr==1) {
 				if (dtyp!=SimpleBasicType(udata)) {
-					zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range types", HYPERDEX_CLIENT_WRONGTYPE TSRMLS_CC);
+					zend_throw_exception(hyperdex_client_ce_exception, (char*)"Invalid range types", HYPERDEX_CLIENT_WRONGTYPE TSRMLS_CC);
 					throw -1;
 				}
 				_buildAttrFromZval<hyperdex_client_attribute_check>(*udata, arr_key, sattr, dtyp);
@@ -3074,12 +3071,12 @@ void buildRangeFromZval( zval* data, char* arr_key, hyperdex_client_attribute_ch
 			++cntr;
 		}
 		if(cntr!=2) {
-			zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range values", HYPERDEX_CLIENT_WRONGTYPE TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"Invalid range values", HYPERDEX_CLIENT_WRONGTYPE TSRMLS_CC);
 			throw -1;
 		}
 	} else {
 		// The input *MUST* be an array.
-		zend_throw_exception(hyperclient_ce_exception, (char*)"Invalid range type", HYPERDEX_CLIENT_WRONGTYPE TSRMLS_CC);
+		zend_throw_exception(hyperdex_client_ce_exception, (char*)"Invalid range type", HYPERDEX_CLIENT_WRONGTYPE TSRMLS_CC);
 		throw -1;
 	}
 
