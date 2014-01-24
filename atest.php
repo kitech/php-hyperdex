@@ -18,7 +18,24 @@ $ret = $adm->error_location();
 var_dump($ret);
 
 $ret = $adm->dump_config();
-var_dump($ret,'------');
+// var_dump($ret,'------');
+
+$ret = $adm->read_only(1);
+var_dump($ret);
+
+$ret = $adm->read_only(0);
+var_dump($ret);
+
+$ret = $adm->wait_until_stable();
+var_dump($ret);
+
+$space_desc = "space datasettest\nkey fkey\nattributes\nstring strval,\nint64 intval,\nfloat dblval,\nlist(string) liststrval,\nlist(int64) listintval,\nlist(float) listdblval,\nset(string) setstrval,\nset(int64) setintval,\nset(float) setdblval,\nmap(string,string) mapstrval,\nmap(string,int64) mapintval,\nmap(string,float) mapdblval\n";
+$ret = $adm->validate_space($space_desc);
+var_dump("validate_space:", $ret, $adm->error_message());
+
+$ret = $adm->add_space($space_desc);
+var_dump("add space:", $ret, $adm->error_message());
+
 
 sleep(5);
 

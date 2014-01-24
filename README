@@ -69,6 +69,22 @@ Mixed HyperdexClient::get_attr( String space, String key, String attr_name )
 
 Boolean HyperdexClient::del( String space, String key )
 
+String HyperdexClient::error_message( )
+
+
+The HyperdexAdmin exposes the following methods:
+
+String HyperdexAdmin::dump_config();
+Boolean HyperdexAdmin::read_only( int ro );
+Boolean HyperdexAdmin::wait_until_stable( );
+Boolean HyperdexAdmin::fault_tolerance( String space, int ft );
+
+Boolean HyperdexAdmin::validate_space( String descript )
+Boolean HyperdexAdmin::add_space( String descript )
+Boolean HyperdexAdmin::rm_space( String space )
+Array   HyperdexAdmin::list_spaces( )
+String HyperdexAdmin::error_message( )
+
 
 
 Example:

@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
  */
 
-/* $Id: hyperdex.cc,v 1.5 2013/04/22 10:33:55 shreos Exp $ */
+/* $Id: php_client.cc,v 1.5 2013/04/22 10:33:55 shreos Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
