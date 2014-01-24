@@ -33,7 +33,7 @@
 #include <zend_operators.h>
 
 /*
- * Class entries for the hyperclient class and the exception
+ * Class entries for the hyperdex client class and the exception
  */
 zend_class_entry* cmdex_ce;
 zend_class_entry* hyperclient_ce_exception;

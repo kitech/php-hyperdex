@@ -36,18 +36,20 @@
 ZEND_DECLARE_MODULE_GLOBALS(hyperdex)
 
 /*
- * Class entries for the hyperclient class and the exception
+ * Class entries for the hyperdex client class and the exception
  */
 extern zend_class_entry* cmdex_ce;
 extern zend_class_entry* hyperclient_ce_exception;
 
 extern zend_object_handlers hyperclient_object_handlers;
 
+/*
+ * Class entries for the hyperdex admin class and the exception
+ */
 extern zend_class_entry* hyperdex_admin_cmdex_ce;
 extern zend_class_entry* hyperdex_admin_ce_exception;
  
 extern zend_object_handlers hyperdex_admin_object_handlers;
-
 
 
 /* {{{ hyperdex_functions[]
@@ -98,22 +100,27 @@ PHP_INI_END()
 
 /* {{{ php_hyperdex_init_globals
  */
-
 static void php_hyperdex_init_globals(zend_hyperdex_globals *hyperdex_globals)
 {
 
 }
 /* }}} */
 
+/* {{{ hyperdex_client_storage_bridge
+ */
 extern void hyperclient_free_storage(void *object TSRMLS_DC);
 extern zend_object_value hyperclient_create_handler(zend_class_entry *type TSRMLS_DC);
 extern PHPAPI zend_class_entry *hyperclient_get_exception_base( );
 extern void hyperclient_init_exception(TSRMLS_D);
+/* }}} */
 
+/* {{{ hyperdex_admin_storage_bridge
+ */
 extern void hyperdex_admin_free_storage(void *object TSRMLS_DC);
 extern zend_object_value hyperdex_admin_create_handler(zend_class_entry *type TSRMLS_DC);
 extern PHPAPI zend_class_entry *hyperdex_admin_get_exception_base( );
 extern void hyperdex_admin_init_exception(TSRMLS_D);
+/* }}} */
 
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -189,6 +196,7 @@ PHP_MINFO_FUNCTION( hyperdex )
 {
 	php_info_print_table_start();
 	php_info_print_table_header( 2, "hyperdex support", "enabled" );
+	php_info_print_table_header( 2, "hyperdex verion", "1.0.2" );
 	php_info_print_table_end();
 
 	/* Remove comments if you have entries in php.ini

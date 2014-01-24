@@ -34,12 +34,8 @@
 
 
 /*
- * Class entries for the hyperclient class and the exception
+ * Class entries for the hyperdex admin class and the exception
  */
-// zend_class_entry* cmdex_ce;
-//zend_class_entry* hyperdex_admin_ce_exception;
-
-//zend_object_handlers hyperdex_admin_object_handlers;
 zend_class_entry* hyperdex_admin_cmdex_ce;
 zend_class_entry* hyperdex_admin_ce_exception;
 
