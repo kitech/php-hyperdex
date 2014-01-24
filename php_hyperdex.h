@@ -81,6 +81,8 @@ PHP_METHOD(HyperdexAdmin, add_space);
 PHP_METHOD(HyperdexAdmin, rm_space);
 PHP_METHOD(HyperdexAdmin, list_spaces);
 PHP_METHOD(HyperdexAdmin, loop);
+PHP_METHOD(HyperdexAdmin, error_message);
+PHP_METHOD(HyperdexAdmin, error_location);
 
 /* 
   	Declare any global variables you may need between the BEGIN

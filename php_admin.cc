@@ -222,5 +222,51 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, loop)
 {
+    hyperdex_admin *hdex;
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+}
+/* }}} */
+
+/* {{{ proto String error_message( )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, error_message)
+{
+    hyperdex_admin *hdex;
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    const char *error_message = hyperdex_admin_error_message(hdex);
+
+    if (error_message == NULL) {
+        RETURN_NULL();
+    }
+
+    zval *rval;
+    ALLOC_ZVAL(rval);
+
+    RETURN_STRING(error_message, 1);
+}
+/* }}} */
+
+/* {{{ proto String error_location( )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, error_location)
+{
+    hyperdex_admin *hdex;
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    const char *error_location = hyperdex_admin_error_location(hdex);
+
+    if (error_location == NULL) {
+        RETURN_NULL();
+    }
+
+    RETURN_STRING(error_location, 1);
 }
 /* }}} */

@@ -11,6 +11,12 @@ var_dump($ret);
 $ret = $adm->rm_space('hahaaaa');
 var_dump($ret);
 
+$ret = $adm->error_message();
+var_dump($ret);
+
+$ret = $adm->error_location();
+var_dump($ret);
+
 sleep(5);
 
 /*

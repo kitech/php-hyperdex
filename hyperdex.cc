@@ -170,6 +170,8 @@ static zend_function_entry hyperdex_admin_functions[] = {
 	PHP_ME(HyperdexAdmin, rm_space,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, list_spaces,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, loop,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, error_message,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, error_location,                 NULL, ZEND_ACC_PUBLIC )
 
 	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
