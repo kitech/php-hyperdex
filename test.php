@@ -30,8 +30,9 @@
   try {
 
    echo "Connect \n";
-    
+
    $hdp = new HyperdexClient('127.0.0.1', 1982);
+   $hdp = new HyperdexClient('10.207.0.225', 1982);
 
    echo "Put Test\n";
 

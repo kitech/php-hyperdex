@@ -28,6 +28,7 @@
 #include "php_hyperdex.h"
 #include <unistd.h>
 #include <hyperdex/admin.h>
+#include <hyperdex/admin.hpp>
 #include <hyperdex.h>
 #include <zend_exceptions.h>
 #include <zend_operators.h>
@@ -152,7 +153,7 @@ PHP_METHOD( HyperdexAdmin, __construct )
 	hyperdex_admin*  hdex        = NULL;
 	char*         host        = NULL;
 	int           host_len    = -1;
-	long          port        = 0;
+	long          port        = 1982;
     bool          async       = false;
 	zval*         object      = getThis();
 
@@ -239,7 +240,7 @@ PHP_METHOD( HyperdexAdmin, dump_config)
 
 
 /* {{{ proto Boolean read_only( int )
-   Disconnect from the HyperDex server, and clean upallocated memory */
+   Set cluster to read only mode. */
 PHP_METHOD( HyperdexAdmin, read_only)
 {
     hyperdex_admin *hdex;
@@ -268,7 +269,7 @@ PHP_METHOD( HyperdexAdmin, read_only)
 
 
 /* {{{ proto Boolean wait_until_stable()
-   Disconnect from the HyperDex server, and clean upallocated memory */
+   Block for cluster usable. */
 PHP_METHOD( HyperdexAdmin, wait_until_stable)
 {
     hyperdex_admin *hdex;
@@ -325,7 +326,7 @@ PHP_METHOD( HyperdexAdmin, fault_tolerance)
 
 
 /* {{{ proto Boolean validate_space(string descript)
-   Disconnect from the HyperDex server, and clean upallocated memory */
+   Validate hyperdex space description string's validation. */
 PHP_METHOD( HyperdexAdmin, validate_space)
 {
     hyperdex_admin *hdex;
@@ -353,7 +354,7 @@ PHP_METHOD( HyperdexAdmin, validate_space)
 
 
 /* {{{ proto Boolean add_space(string descript)
-   Disconnect from the HyperDex server, and clean upallocated memory */
+   Add a space definition. */
 PHP_METHOD( HyperdexAdmin, add_space)
 {
     hyperdex_admin *hdex;
@@ -383,7 +384,7 @@ PHP_METHOD( HyperdexAdmin, add_space)
 /* }}} */
 
 /* {{{ proto Boolean rm_space(string space )
-   Disconnect from the HyperDex server, and clean upallocated memory */
+   Delete a space from cluster. */
 PHP_METHOD(HyperdexAdmin, rm_space)
 {
     hyperdex_admin *hdex;
@@ -414,7 +415,7 @@ PHP_METHOD(HyperdexAdmin, rm_space)
 
 
 /* {{{ proto Array add_space()
-   Disconnect from the HyperDex server, and clean upallocated memory */
+   List all cluster spaces name. */
 PHP_METHOD(HyperdexAdmin, list_spaces)
 {
     hyperdex_admin *hdex;

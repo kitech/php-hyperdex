@@ -26,12 +26,7 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_hyperdex.h"
-#include <unistd.h>
-// #include <hyperdex/client.h>
-// #include <hyperdex/admin.h>
-// #include <hyperdex.h>
-#include <zend_exceptions.h>
-#include <zend_operators.h>
+
 
 ZEND_DECLARE_MODULE_GLOBALS(hyperdex)
 

@@ -28,6 +28,7 @@
 #include "php_hyperdex.h"
 #include <unistd.h>
 #include <hyperdex/client.h>
+#include <hyperdex/client.hpp>
 #include <hyperdex.h>
 #include <zend_exceptions.h>
 #include <zend_operators.h>
@@ -222,7 +223,7 @@ PHP_METHOD( HyperdexClient, __construct )
 	hyperdex_client*  hdex        = NULL;
 	char*         host        = NULL;
 	int           host_len    = -1;
-	long          port        = 0;
+	long          port        = 1982;
     bool          async       = false;
 	zval*         object      = getThis();
 
@@ -432,7 +433,7 @@ PHP_METHOD( HyperdexClient, put )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Put failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -500,7 +501,7 @@ PHP_METHOD( HyperdexClient, put_attr )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Set_attr failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"put_attr failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -620,7 +621,7 @@ PHP_METHOD( HyperdexClient, condput )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"Set failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"condput failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -776,7 +777,7 @@ PHP_METHOD( HyperdexClient, rpush)
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"rpush failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -924,7 +925,7 @@ PHP_METHOD( HyperdexClient, set_remove )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_remove failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -984,8 +985,7 @@ PHP_METHOD( HyperdexClient, set_union )
 
 				if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
 					hyperdex_client_returncode op_status;
-					enum hyperdatatype expected_type = hyperdex_client_attribute_type(hdex, scope, key, &op_status);
-
+					enum hyperdatatype expected_type = hyperdex_client_attribute_type(hdex, scope, arr_key, &op_status);
 					buildAttrFromZval( *data, arr_key, &attr[attr_cnt], expected_type );
 					attr_cnt++;
 				}
@@ -1004,7 +1004,7 @@ PHP_METHOD( HyperdexClient, set_union )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_union failed", 1 TSRMLS_CC );
 		}
 	}
 
@@ -1064,7 +1064,7 @@ PHP_METHOD( HyperdexClient, set_intersect )
 
 				if( zend_hash_get_current_key_ex( arr_hash, &arr_key, &arr_key_len, &index, 0, &pointer ) == HASH_KEY_IS_STRING) {
 					hyperdex_client_returncode op_status;
-					enum hyperdatatype expected_type = hyperdex_client_attribute_type(hdex, scope, key, &op_status);
+					enum hyperdatatype expected_type = hyperdex_client_attribute_type(hdex, scope, arr_key, &op_status);
 
 					buildAttrFromZval( *data, arr_key, &attr[attr_cnt], expected_type );
 					attr_cnt++;
@@ -1084,7 +1084,7 @@ PHP_METHOD( HyperdexClient, set_intersect )
 			}
 
 		} catch( ... ) {
-			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC );
+			zend_throw_exception( hyperdex_client_ce_exception, (char*)"set_intersect failed", 1 TSRMLS_CC );
 		}
 	}
 
