@@ -74,6 +74,7 @@ PHP_METHOD(HyperdexClient, get);
 PHP_METHOD(HyperdexClient, get_attr);
 
 PHP_METHOD(HyperdexClient, del);
+PHP_METHOD(HyperdexClient, loop);
 PHP_METHOD(HyperdexClient, error_message);
 PHP_METHOD(HyperdexClient, error_location);
 
@@ -89,6 +90,11 @@ PHP_METHOD(HyperdexAdmin, validate_space);
 PHP_METHOD(HyperdexAdmin, add_space);
 PHP_METHOD(HyperdexAdmin, rm_space);
 PHP_METHOD(HyperdexAdmin, list_spaces);
+PHP_METHOD(HyperdexAdmin, server_register);
+PHP_METHOD(HyperdexAdmin, server_online);
+PHP_METHOD(HyperdexAdmin, server_offline);
+PHP_METHOD(HyperdexAdmin, server_forget);
+PHP_METHOD(HyperdexAdmin, server_kill);
 PHP_METHOD(HyperdexAdmin, loop);
 PHP_METHOD(HyperdexAdmin, error_message);
 PHP_METHOD(HyperdexAdmin, error_location);

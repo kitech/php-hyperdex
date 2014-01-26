@@ -37,8 +37,10 @@ Usage
 ====================
 
 The HyperdexClient exposes the following methods:
+Boolean HyperdexClient::__construct( string host, int port[, boolean async] )
+Boolean HyperdexClient::__distruct( )
 
-Boolean HyperdexClient::connect( string host, int port )
+Boolean HyperdexClient::connect( string host, int port[, boolean async] )
 Boolean HyperdexClient::disconnect()
 
 Boolean HyperdexClient::put( String space, String key, Array attributes )
@@ -71,20 +73,32 @@ Boolean HyperdexClient::del( String space, String key )
 
 String HyperdexClient::error_message( )
 
+Boolean HyperdexClient::loop( )
+
 
 The HyperdexAdmin exposes the following methods:
+Boolean HyperdexAdmin::__construct( string host, int port[, boolean async] )
+Boolean HyperdexAdmin::__distruct( )
 
-String HyperdexAdmin::dump_config();
+String HyperdexAdmin::dump_config()
 Boolean HyperdexAdmin::read_only( int ro );
 Boolean HyperdexAdmin::wait_until_stable( );
-Boolean HyperdexAdmin::fault_tolerance( String space, int ft );
+Boolean HyperdexAdmin::fault_tolerance( String space, int ft )
 
 Boolean HyperdexAdmin::validate_space( String descript )
 Boolean HyperdexAdmin::add_space( String descript )
 Boolean HyperdexAdmin::rm_space( String space )
 Array   HyperdexAdmin::list_spaces( )
+
+Boolean HyperdexAdmin::server_register( Integer token, String host )
+Boolean HyperdexAdmin::server_online( Integer token )
+Boolean HyperdexAdmin::server_offline( Integer token )
+Boolean HyperdexAdmin::server_forget( Integer token )
+Boolean HyperdexAdmin::server_kill( Integer token )
+
 String HyperdexAdmin::error_message( )
 
+Boolean HyperdexAdmin::loop( )
 
 
 Example:

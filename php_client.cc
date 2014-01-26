@@ -101,6 +101,7 @@ static int php_array_number_compare(const void *a, const void *b TSRMLS_DC);
 struct hyperdex_client_object {
 	zend_object  std;
 	hyperdex_client* hdex;
+    bool async;
 	hyperdex_client_object() : hdex(NULL) {}
 };
 
@@ -142,6 +143,8 @@ struct hyperdex_client_object {
 	PHP_ME(HyperdexClient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, del,                     	NULL, ZEND_ACC_PUBLIC )
+
+	PHP_ME(HyperdexClient, loop,                     	NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, error_message,                     	NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexClient, error_location,                     	NULL, ZEND_ACC_PUBLIC )
@@ -213,7 +216,7 @@ void hyperdex_client_init_exception(TSRMLS_D)
 }
 
 
-/* {{{ proto __construct(string host, int port)
+/* {{{ proto __construct(string host, int port, boolean async)
    Construct a HyperDex Client instance, and connect to a server. */
 PHP_METHOD( HyperdexClient, __construct )
 {
@@ -221,10 +224,11 @@ PHP_METHOD( HyperdexClient, __construct )
 	char*         host        = NULL;
 	int           host_len    = -1;
 	long          port        = 0;
+    bool          async       = false;
 	zval*         object      = getThis();
 
 	// Get the host name / IP and the port number.
-	if (zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl", &host, &host_len, &port ) == FAILURE ) {
+	if (zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &host, &host_len, &port, &async ) == FAILURE ) {
 		RETURN_NULL();
 	}
 
@@ -251,6 +255,7 @@ PHP_METHOD( HyperdexClient, __construct )
 	// If all is good, then set the PHP thread's storage object
 	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object(object TSRMLS_CC );
 	obj->hdex = hdex;
+    obj->async = async;
 
 }
 /* }}} */
@@ -265,7 +270,7 @@ PHP_METHOD(HyperdexClient, __destruct)
 /* }}} *
 
 
-/* {{{ proto Boolean connect(string host, int port)
+/* {{{ proto Boolean connect(string host, int port, boolean async)
    Connect to a HyperDex server */
 PHP_METHOD( HyperdexClient, connect )
 {
@@ -273,9 +278,10 @@ PHP_METHOD( HyperdexClient, connect )
 	char*         host        = NULL;
 	int           host_len    = -1;
 	long          port        = 0;
+    bool          async       = false;
 
 	// Get the host name / IP and the port number.
-	if( zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl", &host, &host_len, &port ) == FAILURE ) {
+	if( zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &host, &host_len, &port, &async ) == FAILURE ) {
 		RETURN_FALSE;
 	}
 
@@ -314,6 +320,7 @@ PHP_METHOD( HyperdexClient, connect )
 
 		// Push it back to the storage object, and return success.
 		obj->hdex = hdex;
+        obj->async = async;
 	}
 
 	// Return success if we set a valid hyperdex_client
@@ -2010,6 +2017,31 @@ PHP_METHOD( HyperdexClient, error_location )
 	}
 
 	RETURN_FALSE;
+}
+/* }}} */
+
+/* {{{ proto Boolean loop( )
+   Get error message info about last hyperdex client operation */
+PHP_METHOD( HyperdexClient, loop )
+{
+	hyperdex_client*  hdex        = NULL;
+	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hdex = obj->hdex;
+
+	hyperdex_client_returncode loop_status;
+
+	int64_t loop_id = hyperdex_client_loop(hdex, -1, &loop_status);
+
+	if( loop_id < 0 ) {
+		if( HYPERDEX_CLIENT_NONEPENDING != loop_status ) {
+			zend_throw_exception( hyperdex_client_ce_exception, HyperDexErrorToMsg( loop_status ), loop_status TSRMLS_CC );
+			RETURN_FALSE;
+		}
+
+		RETURN_FALSE;
+	}
+
+	RETURN_TRUE;
 }
 /* }}} */
 

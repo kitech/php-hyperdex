@@ -48,6 +48,7 @@ zend_object_handlers hyperdex_admin_object_handlers;
 struct hyperdex_admin_object {
 	zend_object  std;
 	hyperdex_admin* hdex;
+    bool async;
 	hyperdex_admin_object() : hdex(NULL) {}
 };
 
@@ -67,6 +68,11 @@ struct hyperdex_admin_object {
 	PHP_ME(HyperdexAdmin, add_space,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, rm_space,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, list_spaces,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, server_register,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, server_online,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, server_offline,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, server_forget,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, server_kill,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, loop,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, error_message,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, error_location,                 NULL, ZEND_ACC_PUBLIC )
@@ -138,7 +144,7 @@ void hyperdex_admin_init_exception(TSRMLS_D)
 }
 
 
-/* {{{ proto __construct(string host, int port)
+/* {{{ proto __construct(string host, int port, boolean async)
    Construct a HyperDex Admin instance, and connect to a server. */
 PHP_METHOD( HyperdexAdmin, __construct )
 {
@@ -146,10 +152,11 @@ PHP_METHOD( HyperdexAdmin, __construct )
 	char*         host        = NULL;
 	int           host_len    = -1;
 	long          port        = 0;
+    bool          async       = false;
 	zval*         object      = getThis();
 
 	// Get the host name / IP and the port number.
-	if (zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl", &host, &host_len, &port ) == FAILURE ) {
+	if (zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &host, &host_len, &port, &async ) == FAILURE ) {
 		RETURN_NULL();
 	}
 
@@ -176,7 +183,7 @@ PHP_METHOD( HyperdexAdmin, __construct )
 	// If all is good, then set the PHP thread's storage object
 	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object(object TSRMLS_CC );
 	obj->hdex = hdex;
-    zend_printf("aaaaaaa111111,%s,%d\n", __FILE__, __LINE__);
+    obj->async = async;
 }
 /* }}} */
 
@@ -206,7 +213,6 @@ PHP_METHOD( HyperdexAdmin, dump_config)
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
 
     if (server_config != NULL) {
-        zend_printf("aaaaaaa111111,%s,%d, %s, len=%d\n", __FILE__, __LINE__, "server_config", strlen(server_config));
         RETURN_STRING(server_config, 1);
     }
     
@@ -232,7 +238,6 @@ PHP_METHOD( HyperdexAdmin, read_only)
 
     hyperdex_admin_returncode op_status;
     int rc = hyperdex_admin_read_only(hdex, ro, &op_status);
-    zend_printf("aaaaaaa111111,%s,%d, %d\n", __FILE__, __LINE__, op_status);
 
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
@@ -257,7 +262,6 @@ PHP_METHOD( HyperdexAdmin, wait_until_stable)
 
     hyperdex_admin_returncode op_status;
     int rc = hyperdex_admin_wait_until_stable(hdex, &op_status);
-    zend_printf("aaaaaaa111111,%s,%d, %d\n", __FILE__, __LINE__, op_status);
 
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
@@ -290,7 +294,6 @@ PHP_METHOD( HyperdexAdmin, fault_tolerance)
 
     hyperdex_admin_returncode op_status;
     int rc = hyperdex_admin_fault_tolerance(hdex, space, ft, &op_status);
-    zend_printf("aaaaaaa111111,%s,%d, %d\n", __FILE__, __LINE__, op_status);
 
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
@@ -336,7 +339,6 @@ PHP_METHOD( HyperdexAdmin, validate_space)
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD( HyperdexAdmin, add_space)
 {
-    zend_printf("aaaaaaa111111,%s,%d\n", __FILE__, __LINE__);
     hyperdex_admin *hdex;
 	char*                   descript         = NULL;
 	int                     descript_len     = -1;
@@ -344,7 +346,6 @@ PHP_METHOD( HyperdexAdmin, add_space)
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &descript, &descript_len) == FAILURE) {
         RETURN_FALSE;
     }
-    zend_printf("aaaaaaa111111,%s,%d, %s\n", __FILE__, __LINE__, descript);
 
 	// Get the hyperdex_admin object from PHP's thread storeage.
 	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
@@ -355,7 +356,6 @@ PHP_METHOD( HyperdexAdmin, add_space)
 
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
-    zend_printf("aaaaaaa111111,%s,%d, %d\n", __FILE__, __LINE__, lrc);
     
     if (lrc == HYPERDEX_ADMIN_SUCCESS) {
         RETURN_TRUE;
@@ -387,8 +387,6 @@ PHP_METHOD(HyperdexAdmin, rm_space)
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
 
-    zend_printf("aaaaaaa111111,%s,%d, %d\n", __FILE__, __LINE__, lrc);
-    
     if (lrc == HYPERDEX_ADMIN_SUCCESS) {
         RETURN_TRUE;
     }
@@ -402,7 +400,6 @@ PHP_METHOD(HyperdexAdmin, rm_space)
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, list_spaces)
 {
-    zend_printf("aaaaaaa111111,%s,%d\n", __FILE__, __LINE__);
     hyperdex_admin *hdex;
 
 	// Get the hyperdex admin object from PHP's thread storeage.
@@ -413,12 +410,8 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
     hyperdex_admin_returncode op_status;
     int64_t op_id = hyperdex_admin_list_spaces(hdex, &op_status, &spaces);
 
-    zend_printf("aaaaaaa111111,%s,%d, op_id=%d, %d, %p\n", __FILE__, __LINE__, op_id, op_status, spaces);
-
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
-
-    zend_printf("aaaaaaa111111,%s,%d, op_id=%d, %d, %s\n", __FILE__, __LINE__, op_id, lrc, spaces);
 
     zval *rval;
     ALLOC_ZVAL(rval);
@@ -443,11 +436,144 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
             add_next_index_zval(rval, nval);
         }
     }
-    zend_printf("aaaaaaa111111,%s,%d,\n", __FILE__, __LINE__);
     
     RETURN_ZVAL(rval, 0, 0);
 }
 /* }}} */
+
+
+/* {{{ proto Boolean server_register( Integer token, String host )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, server_register)
+{
+    hyperdex_admin *hdex;
+
+    uint64_t token = 0;
+    const char *host;
+    int host_len;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ls", &token, &host, &host_len) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    hyperdex_admin_returncode op_status;
+    int64_t op_id = hyperdex_admin_server_register(hdex, token, host, &op_status);
+
+    
+    if (op_status == HYPERDEX_ADMIN_SUCCESS) {
+        RETURN_TRUE;
+    }
+
+    RETURN_FALSE;
+}
+/* }}} */
+
+
+/* {{{ proto Boolean server_online( Integer token )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, server_online)
+{
+    hyperdex_admin *hdex;
+    uint64_t token = 0;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &token) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    hyperdex_admin_returncode op_status;
+    int64_t op_id = hyperdex_admin_server_online(hdex, token, &op_status);
+
+    if (op_status == HYPERDEX_ADMIN_SUCCESS) {
+        RETURN_TRUE;
+    }
+
+    RETURN_FALSE;
+}
+/* }}} */
+
+/* {{{ proto Boolean server_offline( Integer token )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, server_offline)
+{
+    hyperdex_admin *hdex;
+    uint64_t token = 0;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &token) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    hyperdex_admin_returncode op_status;
+    int64_t op_id = hyperdex_admin_server_offline(hdex, token, &op_status);
+
+    if (op_status == HYPERDEX_ADMIN_SUCCESS) {
+        RETURN_TRUE;
+    }
+
+    RETURN_FALSE;
+}
+/* }}} */
+
+
+/* {{{ proto Boolean server_forget( Integer token )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, server_forget)
+{
+    hyperdex_admin *hdex;
+    uint64_t token = 0;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &token) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    hyperdex_admin_returncode op_status;
+    int64_t op_id = hyperdex_admin_server_forget(hdex, token, &op_status);
+
+    if (op_status == HYPERDEX_ADMIN_SUCCESS) {
+        RETURN_TRUE;
+    }
+
+    RETURN_FALSE;
+}
+/* }}} */
+
+
+/* {{{ proto Boolean server_kill( Integer token )
+   Disconnect from the HyperDex server, and clean upallocated memory */
+PHP_METHOD(HyperdexAdmin, server_kill)
+{
+    hyperdex_admin *hdex;
+    uint64_t token = 0;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &token) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
+    hdex = obj->hdex;
+
+    hyperdex_admin_returncode op_status;
+    int64_t op_id = hyperdex_admin_server_kill(hdex, token, &op_status);
+
+    if (op_status == HYPERDEX_ADMIN_SUCCESS) {
+        RETURN_TRUE;
+    }
+
+    RETURN_FALSE;
+}
+/* }}} */
+
 
 /* {{{ proto Boolean loop( )
    Disconnect from the HyperDex server, and clean upallocated memory */
