@@ -88,7 +88,6 @@ struct hyperdex_admin_object {
 void hyperdex_admin_free_storage(void *object TSRMLS_DC)
 {
 	hyperdex_admin_object *obj = (hyperdex_admin_object *)object;
-	delete obj->hdex;
 
 	zend_hash_destroy( obj->std.properties );
 	FREE_HASHTABLE( obj->std.properties );
@@ -195,6 +194,15 @@ PHP_METHOD( HyperdexAdmin, __construct )
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD( HyperdexAdmin, __destruct)
 {
+    hyperdex_admin *hdex = NULL;
+
+	// If all is good, then set the PHP thread's storage object
+    hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object(getThis() TSRMLS_CC );
+
+    if (obj->hdex != NULL) {
+        hyperdex_admin_destroy(obj->hdex);  // BUGS: connect keep there after this.
+        obj->hdex = NULL;
+    }
 }
 /* }}} */
 

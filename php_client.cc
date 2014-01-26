@@ -158,7 +158,6 @@ struct hyperdex_client_object {
 void hyperdex_client_free_storage(void *object TSRMLS_DC)
 {
 	hyperdex_client_object *obj = (hyperdex_client_object *)object;
-	delete obj->hdex;
 
 	zend_hash_destroy( obj->std.properties );
 	FREE_HASHTABLE( obj->std.properties );
@@ -211,7 +210,7 @@ void hyperdex_client_init_exception(TSRMLS_D)
 {
 	zend_class_entry e;
 
-	INIT_CLASS_ENTRY(e, "HyperdexException", NULL);
+	INIT_CLASS_ENTRY(e, "HyperdexClientException", NULL);
 	hyperdex_client_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperdex_client_get_exception_base(), NULL TSRMLS_CC );
 }
 
@@ -266,6 +265,15 @@ PHP_METHOD( HyperdexClient, __construct )
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexClient, __destruct)
 {
+    hyperdex_client *hdex = NULL;
+
+	// If all is good, then set the PHP thread's storage object
+    hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object(getThis() TSRMLS_CC );
+
+    if (obj->hdex != NULL) {
+        hyperdex_client_destroy(obj->hdex);  // BUGS: connect keep there after this.
+        obj->hdex = NULL;
+    }
 }
 /* }}} *
 

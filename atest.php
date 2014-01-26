@@ -123,18 +123,18 @@ var_dump("add space:", $ret, $adm->error_message());
 $token = "16418458729099063566";
 var_dump($token);
 // $token = 122222222223;
-//*
+/*
 $ret = $adm->server_register($token, '10.207.0.226:2013');
 var_dump("server_register:", $ret, $adm->error_message());
-//*/
+*/
 /*
 $ret = $adm->server_online($token);
 var_dump("server_online:", $ret, $adm->error_message());
 */
-//*
+/*
 $ret = $adm->server_offline($token);
 var_dump("server_offline:", $ret, $adm->error_message());
-//*/
+*/
 /*
 $ret = $adm->server_forget($token);
 var_dump("server_forget:", $ret, $adm->error_message());
@@ -144,8 +144,9 @@ $ret = $adm->server_kill($token);
 var_dump("server_kill:", $ret, $adm->error_message());
 */
 
+$adm = null;
 echo "done.......\n";
-sleep(5);
+sleep(500);
 
 /*
 $hdp = new hyperclient('10.207.0.225', 1982);
