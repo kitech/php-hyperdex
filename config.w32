@@ -8,6 +8,6 @@
 ARG_ENABLE("hyperdex", "enable hyperdex support", "no");
 
 if (PHP_HYPERDEX != "no") {
-	EXTENSION("hyperdex", "hyperdex.c");
+	EXTENSION("hyperdex", "php_admin.cc php_client.cc hyperdex.cc");
 }
 
