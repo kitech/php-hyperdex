@@ -49,7 +49,9 @@ zend_object_handlers hyperdex_admin_object_handlers;
 struct hyperdex_admin_object {
 	zend_object  std;
 	hyperdex_admin* hdex;
+    hyperdex::Admin *adex;
     bool async;
+    int  timeout;
     int  error_code;
 	hyperdex_admin_object() : hdex(NULL) {}
 };

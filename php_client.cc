@@ -102,7 +102,9 @@ static int php_array_number_compare(const void *a, const void *b TSRMLS_DC);
 struct hyperdex_client_object {
 	zend_object  std;
 	hyperdex_client* hdex;
+    hyperdex::Client *cdex;
     bool async;
+    int  timeout;
 	hyperdex_client_object() : hdex(NULL) {}
 };
 
