@@ -97,6 +97,7 @@ PHP_METHOD(HyperdexAdmin, server_forget);
 PHP_METHOD(HyperdexAdmin, server_kill);
 PHP_METHOD(HyperdexAdmin, loop);
 PHP_METHOD(HyperdexAdmin, error_message);
+PHP_METHOD(HyperdexAdmin, error_code);
 PHP_METHOD(HyperdexAdmin, error_location);
 
 /* 
