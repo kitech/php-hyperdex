@@ -160,32 +160,32 @@ PHP_METHOD( HyperdexAdmin, __construct )
 	zval*         object      = getThis();
 
 	// Get the host name / IP and the port number.
-	if (zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &host, &host_len, &port, &async ) == FAILURE ) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &host, &host_len, &port, &async) == FAILURE) {
 		RETURN_NULL();
 	}
 
 	// Validate them, and throw an exception if there's an issue.
-	if( NULL == host || 0 >= host_len ) {
-		zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC );
+	if (NULL == host || 0 >= host_len) {
+		zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Invalid host", 1001 TSRMLS_CC);
 	}
     
-	if( 0 >= port || 65536 <= port ) {
-		zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC );
+	if (0 >= port || 65536 <= port) {
+		zend_throw_exception(hyperdex_admin_ce_exception, (char*)"Invalid port", 1001 TSRMLS_CC);
 	}
 
 	// Now try to create the hyperdex_admin (and connect). Throw an exception if there are errors.
 	try {
         hdex = hyperdex_admin_create(host, port);
-		if( NULL == hdex ) {
-			zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
+		if( NULL == hdex) {
+			zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
 		}
-	} catch( ... ) {
+	} catch ( ...) {
 		hdex = NULL;
-		zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC );
+		zend_throw_exception( hyperdex_admin_ce_exception, (char*)"Unable to connect to HyperDex",1 TSRMLS_CC);
 	}
     
 	// If all is good, then set the PHP thread's storage object
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object(object TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object(object TSRMLS_CC);
 	obj->hdex = hdex;
     obj->async = async;
     obj->error_code = -1;
@@ -193,14 +193,14 @@ PHP_METHOD( HyperdexAdmin, __construct )
 /* }}} */
 
 
-/* {{{ proto Boolean __destruct( )
+/* {{{ proto Boolean __destruct()
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD( HyperdexAdmin, __destruct)
 {
     hyperdex_admin *hdex = NULL;
 
 	// If all is good, then set the PHP thread's storage object
-    hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object(getThis() TSRMLS_CC );
+    hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
 
     if (obj->hdex != NULL) {
         hyperdex_admin_destroy(obj->hdex);  // BUGS: connect keep there after this.
@@ -216,7 +216,7 @@ PHP_METHOD( HyperdexAdmin, __destruct)
                      } while (0);
 
 
-/* {{{ proto Array dump_config( )
+/* {{{ proto Array dump_config()
    Dump hyperdex server configration about attribute and region info */
 PHP_METHOD( HyperdexAdmin, dump_config)
 {
@@ -241,7 +241,7 @@ PHP_METHOD( HyperdexAdmin, dump_config)
 /* }}} */
 
 
-/* {{{ proto Boolean read_only( int )
+/* {{{ proto Boolean read_only( int)
    Set cluster to read only mode. */
 PHP_METHOD( HyperdexAdmin, read_only)
 {
@@ -253,7 +253,7 @@ PHP_METHOD( HyperdexAdmin, read_only)
     }
 
 	// Get the hyperdex_admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     hyperdex_admin_returncode op_status;
@@ -277,7 +277,7 @@ PHP_METHOD( HyperdexAdmin, wait_until_stable)
     hyperdex_admin *hdex;
 
 	// Get the hyperdex_admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     hyperdex_admin_returncode op_status;
@@ -295,7 +295,7 @@ PHP_METHOD( HyperdexAdmin, wait_until_stable)
 /* }}} */
 
 
-/* {{{ proto Boolean fault_tolerance(String space, uint64_t ft )
+/* {{{ proto Boolean fault_tolerance(String space, uint64_t ft)
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD( HyperdexAdmin, fault_tolerance)
 {
@@ -309,7 +309,7 @@ PHP_METHOD( HyperdexAdmin, fault_tolerance)
     }
 
 	// Get the hyperdex_admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     hyperdex_admin_returncode op_status;
@@ -340,7 +340,7 @@ PHP_METHOD( HyperdexAdmin, validate_space)
     }
 
 	// Get the hyperdex_admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     descript[descript_len] = '\0';
@@ -368,7 +368,7 @@ PHP_METHOD( HyperdexAdmin, add_space)
     }
 
 	// Get the hyperdex_admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     hyperdex_admin_returncode op_status;
@@ -385,7 +385,7 @@ PHP_METHOD( HyperdexAdmin, add_space)
 }
 /* }}} */
 
-/* {{{ proto Boolean rm_space(string space )
+/* {{{ proto Boolean rm_space(string space)
    Delete a space from cluster. */
 PHP_METHOD(HyperdexAdmin, rm_space)
 {
@@ -398,7 +398,7 @@ PHP_METHOD(HyperdexAdmin, rm_space)
     }
 
 	// Get the hyperdex admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     hyperdex_admin_returncode op_status;
@@ -423,7 +423,7 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
     hyperdex_admin *hdex;
 
 	// Get the hyperdex admin object from PHP's thread storeage.
-	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC );
+	hyperdex_admin_object *obj = (hyperdex_admin_object *)zend_object_store_get_object( getThis() TSRMLS_CC);
 	hdex = obj->hdex;
 
     const char *spaces = NULL;
@@ -462,7 +462,7 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
 /* }}} */
 
 
-/* {{{ proto Boolean server_register( String/Uint64 token, String host )
+/* {{{ proto Boolean server_register( String/Uint64 token, String host)
    TODO: need port argument
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, server_register)
@@ -510,7 +510,7 @@ PHP_METHOD(HyperdexAdmin, server_register)
 /* }}} */
 
 
-/* {{{ proto Boolean server_online( String/Uint64 token )
+/* {{{ proto Boolean server_online( String/Uint64 token)
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, server_online)
 {
@@ -551,7 +551,7 @@ PHP_METHOD(HyperdexAdmin, server_online)
 }
 /* }}} */
 
-/* {{{ proto Boolean server_offline( String/Uint64 token )
+/* {{{ proto Boolean server_offline( String/Uint64 token)
    BUGS: return true but server status not change.
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, server_offline)
@@ -628,7 +628,7 @@ PHP_METHOD(HyperdexAdmin, server_offline)
 /* }}} */
 
 
-/* {{{ proto Boolean server_forget( String/UInt64 token )
+/* {{{ proto Boolean server_forget( String/UInt64 token)
    BUGS: server CPU 100%
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, server_forget)
@@ -671,7 +671,7 @@ PHP_METHOD(HyperdexAdmin, server_forget)
 /* }}} */
 
 
-/* {{{ proto Boolean server_kill( String/UInt64 token )
+/* {{{ proto Boolean server_kill( String/UInt64 token)
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, server_kill)
 {
@@ -713,7 +713,7 @@ PHP_METHOD(HyperdexAdmin, server_kill)
 /* }}} */
 
 
-/* {{{ proto Boolean loop( )
+/* {{{ proto Boolean loop()
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, loop)
 {
@@ -733,7 +733,7 @@ PHP_METHOD(HyperdexAdmin, loop)
 }
 /* }}} */
 
-/* {{{ proto String error_message( )
+/* {{{ proto String error_message()
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, error_message)
 {
@@ -755,7 +755,7 @@ PHP_METHOD(HyperdexAdmin, error_message)
 }
 /* }}} */
 
-/* {{{ proto Integer error_code( )
+/* {{{ proto Integer error_code()
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, error_code)
 {
@@ -770,7 +770,7 @@ PHP_METHOD(HyperdexAdmin, error_code)
 }
 /* }}} */
 
-/* {{{ proto String error_location( )
+/* {{{ proto String error_location()
    Disconnect from the HyperDex server, and clean upallocated memory */
 PHP_METHOD(HyperdexAdmin, error_location)
 {
