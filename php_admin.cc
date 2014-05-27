@@ -433,6 +433,10 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
 
+    if (lrc != HYPERDEX_ADMIN_SUCCESS) {
+        RETURN_FALSE;
+    }
+
     zval *rval;
     ALLOC_ZVAL(rval);
     array_init(rval);
