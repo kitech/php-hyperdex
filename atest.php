@@ -75,7 +75,7 @@ function config_parser($config)
 
 $adm = new HyperdexAdmin('10.207.0.225', 1982);
 var_dump($adm);
-if (!is_resource($adm)) {
+if (!is_object($adm)) {
     die("create adm faild\n");
 }
 $ret = $adm->add_space('haha');

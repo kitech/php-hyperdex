@@ -347,6 +347,7 @@ PHP_METHOD( HyperdexAdmin, validate_space)
     hyperdex_admin_returncode op_status;
     int rc = hyperdex_admin_validate_space(hdex, descript, &op_status);
 
+    // no network traffic, so omit op_status's value
     if (rc == 0) {
         RETURN_TRUE;
     }
@@ -416,7 +417,7 @@ PHP_METHOD(HyperdexAdmin, rm_space)
 /* }}} */
 
 
-/* {{{ proto Array add_space()
+/* {{{ proto Array list_spaces()
    List all cluster spaces name. */
 PHP_METHOD(HyperdexAdmin, list_spaces)
 {
@@ -500,7 +501,7 @@ PHP_METHOD(HyperdexAdmin, server_register)
 
     hyperdex_admin_returncode op_status;
     int64_t op_id = hyperdex_admin_server_register(hdex, token, host, &op_status);
-    zend_printf("INFO: %s,%d, %s, %d\n", __FILE__, __LINE__, host, op_status);
+    // zend_printf("INFO: %s,%d, %s, %d\n", __FILE__, __LINE__, host, op_status);
     
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
@@ -621,7 +622,7 @@ PHP_METHOD(HyperdexAdmin, server_offline)
 
     hyperdex_admin_returncode lrc;
     int64_t lop_id = hyperdex_admin_loop(hdex, -1, &lrc);
-    zend_printf("INFO: token=%lu, %d\n", token, lrc);
+    // zend_printf("INFO: token=%lu, %d\n", token, lrc);
 
     if (lrc == HYPERDEX_ADMIN_SUCCESS) {
         RETURN_TRUE;
