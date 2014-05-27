@@ -185,7 +185,7 @@ PHP_MINFO_FUNCTION( hyperdex )
 {
 	php_info_print_table_start();
 	php_info_print_table_header( 2, "hyperdex support", "enabled" );
-	php_info_print_table_header( 2, "hyperdex verion", "1.0.2" );
+	php_info_print_table_header( 2, "hyperdex verion", "1.3.0" );
 	php_info_print_table_end();
 
 	/* Remove comments if you have entries in php.ini
