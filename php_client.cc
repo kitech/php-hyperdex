@@ -213,7 +213,7 @@ void hyperdex_client_init_exception(TSRMLS_D)
 {
 	zend_class_entry e;
 
-	INIT_CLASS_ENTRY(e, "HyperdexClientException", NULL);
+	INIT_CLASS_ENTRY(e, "Hyperdex\\ClientException", NULL);
 	hyperdex_client_ce_exception = zend_register_internal_class_ex(&e, (zend_class_entry*)hyperdex_client_get_exception_base(), NULL TSRMLS_CC);
 }
 

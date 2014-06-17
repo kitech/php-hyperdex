@@ -143,7 +143,7 @@ void hyperdex_admin_init_exception(TSRMLS_D)
 {
 	zend_class_entry e;
 
-	INIT_CLASS_ENTRY(e, "HyperdexAdminException", NULL);
+	INIT_CLASS_ENTRY(e, "Hyperdex\\AdminException", NULL);
 	hyperdex_admin_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperdex_admin_get_exception_base(), NULL TSRMLS_CC );
 }
 
