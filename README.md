@@ -14,7 +14,7 @@ For more information on Hyperdex, please see http://hyperdex.org/
 
 For comments, or issues, please contact bbroerman@bbroerman.net
 
-
+In order for the followuing to work you will need to run `sudo apt-get install hyperdex libhyperdex-client-dev libhyperdex-admin-dev libhyperdex-dev` first.
 
 Installing/Configuring
 ======================
@@ -22,7 +22,7 @@ Installing/Configuring
     phpize
     ./configure --enable-hyperdex
     make
-    make install
+    sudo make install
 
 `make install` copies `hyperdex.so` to an appropriate location, but you still need to enable the module in the PHP config file. To do so, either edit your php.ini or add a redis.ini file in `/etc/php5/conf.d` with the following contents: `extension=hyperdex.so`.
 
