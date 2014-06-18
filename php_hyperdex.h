@@ -49,16 +49,16 @@ PHP_METHOD(HyperdexClient, connect);
 PHP_METHOD(HyperdexClient, disconnect);
 
 PHP_METHOD(HyperdexClient, put);
-PHP_METHOD(HyperdexClient, put_attr);
-PHP_METHOD(HyperdexClient, condput);
+PHP_METHOD(HyperdexClient, putAttr);
+PHP_METHOD(HyperdexClient, condPut);
 
-PHP_METHOD(HyperdexClient, lpush);
-PHP_METHOD(HyperdexClient, rpush);
+PHP_METHOD(HyperdexClient, lPush);
+PHP_METHOD(HyperdexClient, rPush);
 
-PHP_METHOD(HyperdexClient, set_add);
-PHP_METHOD(HyperdexClient, set_remove);
-PHP_METHOD(HyperdexClient, set_union);
-PHP_METHOD(HyperdexClient, set_intersect);
+PHP_METHOD(HyperdexClient, setAdd);
+PHP_METHOD(HyperdexClient, setRemove);
+PHP_METHOD(HyperdexClient, setUnion);
+PHP_METHOD(HyperdexClient, setIntersect);
 
 PHP_METHOD(HyperdexClient, add);
 PHP_METHOD(HyperdexClient, sub);
@@ -71,34 +71,34 @@ PHP_METHOD(HyperdexClient, xor);
     
 PHP_METHOD(HyperdexClient, search);
 PHP_METHOD(HyperdexClient, get);
-PHP_METHOD(HyperdexClient, get_attr);
+PHP_METHOD(HyperdexClient, getAttr);
 
 PHP_METHOD(HyperdexClient, del);
 PHP_METHOD(HyperdexClient, loop);
-PHP_METHOD(HyperdexClient, error_message);
-PHP_METHOD(HyperdexClient, error_location);
+PHP_METHOD(HyperdexClient, errorMessage);
+PHP_METHOD(HyperdexClient, errorLocation);
 
 
 /* admin method */
 PHP_METHOD(HyperdexAdmin, __construct);
 PHP_METHOD(HyperdexAdmin, __destruct);
-PHP_METHOD(HyperdexAdmin, dump_config);
-PHP_METHOD(HyperdexAdmin, read_only);
-PHP_METHOD(HyperdexAdmin, wait_until_stable);
-PHP_METHOD(HyperdexAdmin, fault_tolerance);
-PHP_METHOD(HyperdexAdmin, validate_space);
-PHP_METHOD(HyperdexAdmin, add_space);
-PHP_METHOD(HyperdexAdmin, rm_space);
-PHP_METHOD(HyperdexAdmin, list_spaces);
-PHP_METHOD(HyperdexAdmin, server_register);
-PHP_METHOD(HyperdexAdmin, server_online);
-PHP_METHOD(HyperdexAdmin, server_offline);
-PHP_METHOD(HyperdexAdmin, server_forget);
-PHP_METHOD(HyperdexAdmin, server_kill);
+PHP_METHOD(HyperdexAdmin, dumpConfig);
+PHP_METHOD(HyperdexAdmin, readOnly);
+PHP_METHOD(HyperdexAdmin, waitUntilStable);
+PHP_METHOD(HyperdexAdmin, faultTolerance);
+PHP_METHOD(HyperdexAdmin, validateSpace);
+PHP_METHOD(HyperdexAdmin, addSpace);
+PHP_METHOD(HyperdexAdmin, rmSpace);
+PHP_METHOD(HyperdexAdmin, listSpaces);
+PHP_METHOD(HyperdexAdmin, serverRegister);
+PHP_METHOD(HyperdexAdmin, serverOnline);
+PHP_METHOD(HyperdexAdmin, serverOffline);
+PHP_METHOD(HyperdexAdmin, serverForget);
+PHP_METHOD(HyperdexAdmin, serverKill);
 PHP_METHOD(HyperdexAdmin, loop);
-PHP_METHOD(HyperdexAdmin, error_message);
-PHP_METHOD(HyperdexAdmin, error_code);
-PHP_METHOD(HyperdexAdmin, error_location);
+PHP_METHOD(HyperdexAdmin, errorMessage);
+PHP_METHOD(HyperdexAdmin, errorCode);
+PHP_METHOD(HyperdexAdmin, errorLocation);
 
 /* 
   	Declare any global variables you may need between the BEGIN
