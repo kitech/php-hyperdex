@@ -121,16 +121,16 @@ struct hyperdex_client_object {
 	PHP_ME(HyperdexClient, disconnect,              	NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, put,                      	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, put_attr,                 	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, condput,                  	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, putAttr,                 	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, condPut,                  	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(HyperdexClient, lpush,                    	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, rpush,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, lPush,                    	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, rPush,                    	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(HyperdexClient, set_add,                  	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, set_remove,                	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, set_union,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, set_intersect,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, setAdd,                  	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, setRemove,                	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, setUnion,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, setIntersect,                 NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, add,                    	NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexClient, sub,                    	NULL, ZEND_ACC_PUBLIC )
@@ -143,14 +143,14 @@ struct hyperdex_client_object {
 
 	PHP_ME(HyperdexClient, search,                     NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexClient, get,	                    NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, get_attr,	                NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, getAttr,	                NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, del,                     	NULL, ZEND_ACC_PUBLIC )
 
 	PHP_ME(HyperdexClient, loop,                     	NULL, ZEND_ACC_PUBLIC )
 
-	PHP_ME(HyperdexClient, error_message,                     	NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexClient, error_location,                     	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, errorMessage,                     	NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexClient, errorLocation,                     	NULL, ZEND_ACC_PUBLIC )
 
 	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
@@ -213,7 +213,7 @@ void hyperdex_client_init_exception(TSRMLS_D)
 {
 	zend_class_entry e;
 
-	INIT_CLASS_ENTRY(e, "HyperdexClientException", NULL);
+	INIT_CLASS_ENTRY(e, "Hyperdex\\ClientException", NULL);
 	hyperdex_client_ce_exception = zend_register_internal_class_ex(&e, (zend_class_entry*)hyperdex_client_get_exception_base(), NULL TSRMLS_CC);
 }
 
@@ -450,9 +450,9 @@ PHP_METHOD(HyperdexClient, put)
 }
 /* }}} */
 
-/* {{{ proto Boolean put_attr(string space, string key, string attribute, Mixed value)
+/* {{{ proto Boolean putAttr(string space, string key, string attribute, Mixed value)
        Sets a given attribute for a given record (as defined by key) for a given space. */
-PHP_METHOD(HyperdexClient, put_attr)
+PHP_METHOD(HyperdexClient, putAttr)
 {
 	hyperdex_client*            hdex          = NULL;
 	char*                   scope         = NULL;
@@ -503,7 +503,7 @@ PHP_METHOD(HyperdexClient, put_attr)
 			}
 
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"put_attr failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"putAttr failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -519,9 +519,9 @@ PHP_METHOD(HyperdexClient, put_attr)
 /* }}} */
 
 
-/* {{{ proto Boolean condput(string space, string key, Array conditionals, Array attributes)
+/* {{{ proto Boolean condPut(string space, string key, Array conditionals, Array attributes)
    Update the attributes for a key if and only if the existing attribute values match the conditionals */
-PHP_METHOD(HyperdexClient, condput)
+PHP_METHOD(HyperdexClient, condPut)
 {
 	hyperdex_client*            hdex          = NULL;
 	char*                   scope         = NULL;
@@ -623,7 +623,7 @@ PHP_METHOD(HyperdexClient, condput)
 			}
 
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"condput failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"condPut failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -644,9 +644,9 @@ PHP_METHOD(HyperdexClient, condput)
 /* }}} */
 
 
-/* {{{ proto Boolean lpush(String space, String key, Array attributes)
+/* {{{ proto Boolean lPush(String space, String key, Array attributes)
    Pushes the specified object to the head of the list of each attribute specified by the request.  */
-PHP_METHOD(HyperdexClient, lpush)
+PHP_METHOD(HyperdexClient, lPush)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -704,7 +704,7 @@ PHP_METHOD(HyperdexClient, lpush)
 				}
 			}
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"lpush failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"lPush failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -718,9 +718,9 @@ PHP_METHOD(HyperdexClient, lpush)
 /* }}} */
 
 
-/* {{{ proto Boolean rpush(String space, String key, Array attributes)
+/* {{{ proto Boolean rPush(String space, String key, Array attributes)
    Pushes the specified object to the tail of the list of each attribute specified by the request.  */
-PHP_METHOD(HyperdexClient, rpush)
+PHP_METHOD(HyperdexClient, rPush)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -779,7 +779,7 @@ PHP_METHOD(HyperdexClient, rpush)
 			}
 
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"rpush failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"rPush failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -792,9 +792,9 @@ PHP_METHOD(HyperdexClient, rpush)
 }
 /* }}} */
 
-/* {{{ proto Boolean set_add(string space, String key, Array attributes)
+/* {{{ proto Boolean setAdd(string space, String key, Array attributes)
    Adds a value to one or more sets for a given space and key if the value is not already in the set. */
-PHP_METHOD(HyperdexClient, set_add)
+PHP_METHOD(HyperdexClient, setAdd)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -852,7 +852,7 @@ PHP_METHOD(HyperdexClient, set_add)
 				}
 			}
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"set_add failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"setAdd failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -866,9 +866,9 @@ PHP_METHOD(HyperdexClient, set_add)
 /* }}} */
 
 
-/* {{{ proto Boolean set_remove(string space, String key, Array attributes)
+/* {{{ proto Boolean setRemove(string space, String key, Array attributes)
    Removes a value to one or more sets for a given space and key if the value is in the set. */
-PHP_METHOD(HyperdexClient, set_remove)
+PHP_METHOD(HyperdexClient, setRemove)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -927,7 +927,7 @@ PHP_METHOD(HyperdexClient, set_remove)
 			}
 
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"set_remove failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"setRemove failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -941,11 +941,11 @@ PHP_METHOD(HyperdexClient, set_remove)
 /* }}} */
 
 
-/* {{{ proto Boolean set_union(string space, String key, Array attributes)
+/* {{{ proto Boolean setUnion(string space, String key, Array attributes)
    Performs a set union with one or more sets for a given space and key. Sets will be defined by the
    key of the passed in array, with the set to be unioned with the stored set passed as the value.
    The union will be atomic without interference from other operations. */
-PHP_METHOD(HyperdexClient, set_union)
+PHP_METHOD(HyperdexClient, setUnion)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1006,7 +1006,7 @@ PHP_METHOD(HyperdexClient, set_union)
 			}
 
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"set_union failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"setUnion failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -1020,11 +1020,11 @@ PHP_METHOD(HyperdexClient, set_union)
 /* }}} */
 
 
-/* {{{ proto Boolean set_intersect(string space, String key, Array attributes)
+/* {{{ proto Boolean setIntersect(string space, String key, Array attributes)
    Performs a set intersection with one or more sets for a given space and key. Sets will be defined by the
    key of the passed in array, with the set to be unioned with the stored set passed as the value.
    The union will be atomic without interference from other operations. */
-PHP_METHOD(HyperdexClient, set_intersect)
+PHP_METHOD(HyperdexClient, setIntersect)
 {
 	hyperdex_client*            hdex        = NULL;
 	char*                   scope       = NULL;
@@ -1086,7 +1086,7 @@ PHP_METHOD(HyperdexClient, set_intersect)
 			}
 
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"set_intersect failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"setIntersect failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -1881,9 +1881,9 @@ PHP_METHOD(HyperdexClient, get)
 }
 /* }}} */
 
-/* {{{ proto Mixed get(string space, string key, string attribute)
+/* {{{ proto Mixed getAttr(string space, string key, string attribute)
    Returns the named attribute from the record identified by key from the specified space (table) */
-PHP_METHOD(HyperdexClient, get_attr)
+PHP_METHOD(HyperdexClient, getAttr)
 {
 	hyperdex_client*  hdex          = NULL;
 	char*         scope         = NULL;
@@ -1933,7 +1933,7 @@ PHP_METHOD(HyperdexClient, get_attr)
 				}
 			}
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"get failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"getAttr failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -1984,9 +1984,9 @@ PHP_METHOD(HyperdexClient, del)
 }
 /* }}} */
 
-/* {{{ proto String error_message()
+/* {{{ proto String errorMessage()
    Get error message info about last hyperdex client operation */
-PHP_METHOD(HyperdexClient, error_message)
+PHP_METHOD(HyperdexClient, errorMessage)
 {
 	hyperdex_client*  hdex        = NULL;
 	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -1999,7 +1999,7 @@ PHP_METHOD(HyperdexClient, error_message)
                 RETURN_STRING(error_message, 1);
             }
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"get error message failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"errorMessage failed", 1 TSRMLS_CC);
 		}
 	}
 
@@ -2007,9 +2007,9 @@ PHP_METHOD(HyperdexClient, error_message)
 }
 /* }}} */
 
-/* {{{ proto Boolean error_location()
+/* {{{ proto Boolean errorLocation()
    Get error location info about last hyperdex client operation */
-PHP_METHOD(HyperdexClient, error_location)
+PHP_METHOD(HyperdexClient, errorLocation)
 {
 	hyperdex_client*  hdex        = NULL;
 	hyperdex_client_object *obj = (hyperdex_client_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -2022,7 +2022,7 @@ PHP_METHOD(HyperdexClient, error_location)
                 RETURN_STRING(error_location, 1);
             }
 		} catch (...) {
-			zend_throw_exception(hyperdex_client_ce_exception, (char*)"get error location failed", 1 TSRMLS_CC);
+			zend_throw_exception(hyperdex_client_ce_exception, (char*)"errorLocation failed", 1 TSRMLS_CC);
 		}
 	}
 

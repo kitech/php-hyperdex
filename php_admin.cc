@@ -64,23 +64,23 @@ struct hyperdex_admin_object {
 /* const static */ zend_function_entry hyperdex_admin_functions[] = {
 	PHP_ME(HyperdexAdmin, __construct,                NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR )
 	PHP_ME(HyperdexAdmin, __destruct,                 NULL, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR )
-	PHP_ME(HyperdexAdmin, dump_config,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, read_only,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, validate_space,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, wait_until_stable,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, fault_tolerance,                NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, add_space,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, rm_space,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, list_spaces,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, server_register,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, server_online,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, server_offline,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, server_forget,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, server_kill,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, dumpConfig,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, readOnly,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, validateSpace,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, waitUntilStable,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, faultTolerance,                NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, addSpace,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, rmSpace,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, listSpaces,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, serverRegister,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, serverOnline,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, serverOffline,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, serverForget,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, serverKill,                 NULL, ZEND_ACC_PUBLIC )
 	PHP_ME(HyperdexAdmin, loop,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, error_message,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, error_code,                 NULL, ZEND_ACC_PUBLIC )
-	PHP_ME(HyperdexAdmin, error_location,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, errorMessage,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, errorCode,                 NULL, ZEND_ACC_PUBLIC )
+	PHP_ME(HyperdexAdmin, errorLocation,                 NULL, ZEND_ACC_PUBLIC )
 
 	PHP_FE_END	/* Must be the last line in hyperdex_functions[] */
 };
@@ -143,7 +143,7 @@ void hyperdex_admin_init_exception(TSRMLS_D)
 {
 	zend_class_entry e;
 
-	INIT_CLASS_ENTRY(e, "HyperdexAdminException", NULL);
+	INIT_CLASS_ENTRY(e, "Hyperdex\\AdminException", NULL);
 	hyperdex_admin_ce_exception = zend_register_internal_class_ex( &e, (zend_class_entry*)hyperdex_admin_get_exception_base(), NULL TSRMLS_CC );
 }
 
@@ -216,9 +216,9 @@ PHP_METHOD( HyperdexAdmin, __destruct)
                      } while (0);
 
 
-/* {{{ proto Array dump_config()
+/* {{{ proto Array dumpConfig()
    Dump hyperdex server configration about attribute and region info */
-PHP_METHOD( HyperdexAdmin, dump_config)
+PHP_METHOD( HyperdexAdmin, dumpConfig)
 {
     hyperdex_admin *hdex;
     hyperdex_admin_object *obj = (hyperdex_admin_object*)zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -241,9 +241,9 @@ PHP_METHOD( HyperdexAdmin, dump_config)
 /* }}} */
 
 
-/* {{{ proto Boolean read_only( int)
+/* {{{ proto Boolean readOnly( int)
    Set cluster to read only mode. */
-PHP_METHOD( HyperdexAdmin, read_only)
+PHP_METHOD( HyperdexAdmin, readOnly)
 {
     hyperdex_admin *hdex;
     long ro;
@@ -270,9 +270,9 @@ PHP_METHOD( HyperdexAdmin, read_only)
 /* }}} */
 
 
-/* {{{ proto Boolean wait_until_stable()
+/* {{{ proto Boolean waitUntilStable()
    Block for cluster usable. */
-PHP_METHOD( HyperdexAdmin, wait_until_stable)
+PHP_METHOD( HyperdexAdmin, waitUntilStable)
 {
     hyperdex_admin *hdex;
 
@@ -295,9 +295,9 @@ PHP_METHOD( HyperdexAdmin, wait_until_stable)
 /* }}} */
 
 
-/* {{{ proto Boolean fault_tolerance(String space, uint64_t ft)
+/* {{{ proto Boolean faultTolerance(String space, uint64_t ft)
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD( HyperdexAdmin, fault_tolerance)
+PHP_METHOD( HyperdexAdmin, faultTolerance)
 {
     hyperdex_admin *hdex;
     char *space = NULL;
@@ -327,9 +327,9 @@ PHP_METHOD( HyperdexAdmin, fault_tolerance)
 /* }}} */
 
 
-/* {{{ proto Boolean validate_space(string descript)
+/* {{{ proto Boolean validateSpace(string descript)
    Validate hyperdex space description string's validation. */
-PHP_METHOD( HyperdexAdmin, validate_space)
+PHP_METHOD( HyperdexAdmin, validateSpace)
 {
     hyperdex_admin *hdex;
 	char*                   descript         = NULL;
@@ -356,9 +356,9 @@ PHP_METHOD( HyperdexAdmin, validate_space)
 /* }}} */
 
 
-/* {{{ proto Boolean add_space(string descript)
+/* {{{ proto Boolean addSpace(string descript)
    Add a space definition. */
-PHP_METHOD( HyperdexAdmin, add_space)
+PHP_METHOD( HyperdexAdmin, addSpace)
 {
     hyperdex_admin *hdex;
 	char*                   descript         = NULL;
@@ -386,9 +386,9 @@ PHP_METHOD( HyperdexAdmin, add_space)
 }
 /* }}} */
 
-/* {{{ proto Boolean rm_space(string space)
+/* {{{ proto Boolean rmSpace(string space)
    Delete a space from cluster. */
-PHP_METHOD(HyperdexAdmin, rm_space)
+PHP_METHOD(HyperdexAdmin, rmSpace)
 {
     hyperdex_admin *hdex;
     char *space = NULL;
@@ -417,9 +417,9 @@ PHP_METHOD(HyperdexAdmin, rm_space)
 /* }}} */
 
 
-/* {{{ proto Array list_spaces()
+/* {{{ proto Array listSpaces()
    List all cluster spaces name. */
-PHP_METHOD(HyperdexAdmin, list_spaces)
+PHP_METHOD(HyperdexAdmin, listSpaces)
 {
     hyperdex_admin *hdex;
 
@@ -467,10 +467,10 @@ PHP_METHOD(HyperdexAdmin, list_spaces)
 /* }}} */
 
 
-/* {{{ proto Boolean server_register( String/Uint64 token, String host)
+/* {{{ proto Boolean serverRegister( String/Uint64 token, String host)
    TODO: need port argument
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, server_register)
+PHP_METHOD(HyperdexAdmin, serverRegister)
 {
     hyperdex_admin *hdex;
 
@@ -515,9 +515,9 @@ PHP_METHOD(HyperdexAdmin, server_register)
 /* }}} */
 
 
-/* {{{ proto Boolean server_online( String/Uint64 token)
+/* {{{ proto Boolean serverOnline( String/Uint64 token)
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, server_online)
+PHP_METHOD(HyperdexAdmin, serverOnline)
 {
     hyperdex_admin *hdex;
     uint64_t token = 0;
@@ -556,10 +556,10 @@ PHP_METHOD(HyperdexAdmin, server_online)
 }
 /* }}} */
 
-/* {{{ proto Boolean server_offline( String/Uint64 token)
+/* {{{ proto Boolean serverOffline( String/Uint64 token)
    BUGS: return true but server status not change.
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, server_offline)
+PHP_METHOD(HyperdexAdmin, serverOffline)
 {
     hyperdex_admin *hdex;
     uint64_t token = 0;
@@ -633,10 +633,10 @@ PHP_METHOD(HyperdexAdmin, server_offline)
 /* }}} */
 
 
-/* {{{ proto Boolean server_forget( String/UInt64 token)
+/* {{{ proto Boolean serverForget( String/UInt64 token)
    BUGS: server CPU 100%
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, server_forget)
+PHP_METHOD(HyperdexAdmin, serverForget)
 {
     hyperdex_admin *hdex;
     uint64_t token = 0;
@@ -676,9 +676,9 @@ PHP_METHOD(HyperdexAdmin, server_forget)
 /* }}} */
 
 
-/* {{{ proto Boolean server_kill( String/UInt64 token)
+/* {{{ proto Boolean serverKill( String/UInt64 token)
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, server_kill)
+PHP_METHOD(HyperdexAdmin, serverKill)
 {
     hyperdex_admin *hdex;
     uint64_t token = 0;
@@ -738,9 +738,9 @@ PHP_METHOD(HyperdexAdmin, loop)
 }
 /* }}} */
 
-/* {{{ proto String error_message()
+/* {{{ proto String errorMessage()
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, error_message)
+PHP_METHOD(HyperdexAdmin, errorMessage)
 {
     hyperdex_admin *hdex;
 
@@ -760,9 +760,9 @@ PHP_METHOD(HyperdexAdmin, error_message)
 }
 /* }}} */
 
-/* {{{ proto Integer error_code()
+/* {{{ proto Integer errorCode()
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, error_code)
+PHP_METHOD(HyperdexAdmin, errorCode)
 {
     hyperdex_admin *hdex;
 
@@ -775,9 +775,9 @@ PHP_METHOD(HyperdexAdmin, error_code)
 }
 /* }}} */
 
-/* {{{ proto String error_location()
+/* {{{ proto String errorLocation()
    Disconnect from the HyperDex server, and clean upallocated memory */
-PHP_METHOD(HyperdexAdmin, error_location)
+PHP_METHOD(HyperdexAdmin, errorLocation)
 {
     hyperdex_admin *hdex;
 

@@ -129,7 +129,7 @@ PHP_MINIT_FUNCTION( hyperdex )
 
 	REGISTER_INI_ENTRIES();
 
-	INIT_CLASS_ENTRY( client_ce, "HyperdexClient", hyperdex_client_functions );
+	INIT_CLASS_ENTRY( client_ce, "Hyperdex\\Client", hyperdex_client_functions );
 	hyperdex_client_cmdex_ce = zend_register_internal_class(&client_ce TSRMLS_CC);
 
 	hyperdex_client_cmdex_ce->create_object = hyperdex_client_create_handler;
@@ -139,7 +139,7 @@ PHP_MINIT_FUNCTION( hyperdex )
 	hyperdex_client_init_exception( TSRMLS_C );
 
 
-    INIT_CLASS_ENTRY(admin_ce, "HyperdexAdmin", hyperdex_admin_functions);
+    INIT_CLASS_ENTRY(admin_ce, "Hyperdex\\Admin", hyperdex_admin_functions);
     hyperdex_admin_cmdex_ce = zend_register_internal_class(&admin_ce TSRMLS_CC);
 
     hyperdex_admin_cmdex_ce->create_object = hyperdex_admin_create_handler;
