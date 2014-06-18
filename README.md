@@ -45,16 +45,16 @@ The Hyperdex\Client exposes the following methods:
     bool Client::disconnect();
     
     bool Client::put(string space, string key, array attributes);
-    bool Client::put_attr(string space, string key, string attr_name, Mixed value);
-    bool Client::condput(string space, string key, array conditionals, array attributes);
+    bool Client::putAttr(string space, string key, string attr_name, Mixed value);
+    bool Client::condPut(string space, string key, array conditionals, array attributes);
     
-    bool Client::lpush(string space, string key, array attributes);
-    bool Client::rpush(string space, string key, array attributes);
+    bool Client::lPush(string space, string key, array attributes);
+    bool Client::rPush(string space, string key, array attributes);
     
-    bool Client::set_add(string space, string key, array attributes);
-    bool Client::set_remove(string space, string key, array attributes);
-    bool Client::set_union(string space, string key, array attributes);
-    bool Client::set_intersect(string space, string key, array attributes);
+    bool Client::setAdd(string space, string key, array attributes);
+    bool Client::setRemove(string space, string key, array attributes);
+    bool Client::setUnion(string space, string key, array attributes);
+    bool Client::setIntersect(string space, string key, array attributes);
     
     bool Client::add(string space, string key, array attributes);
     bool Client::sub(string space, string key, array attributes);
@@ -68,11 +68,11 @@ The Hyperdex\Client exposes the following methods:
     array Client::search(string space, array cond_attrs, array range_attrs);
     
     array Client::get(string space, string key);
-    mixed Client::get_attr(string space, string key, string attr_name);
+    mixed Client::getAttr(string space, string key, string attr_name);
     
     bool Client::del(string space, string key);
     
-    string Client::error_message();
+    string Client::errorMessage();
     
     bool Client::loop();
     
@@ -84,24 +84,24 @@ The Hyperdex\Admin exposes the following methods:
     bool Admin::__construct(string host, int port[, boolean async = false]);
     bool Admin::__destruct();
     
-    string Admin::dump_config();
-    bool Admin::read_only(int ro);
-    bool Admin::wait_until_stable();
-    bool Admin::fault_tolerance(string space, int ft);
+    string Admin::dumpConfig();
+    bool Admin::readOnly(int ro);
+    bool Admin::waitUntilStable();
+    bool Admin::faultTolerance(string space, int ft);
     
-    bool Admin::validate_space(string descript);
-    bool Admin::add_space(string descript);
-    bool Admin::rm_space(string space);
-    array Admin::list_spaces();
+    bool Admin::validateSpace(string descript);
+    bool Admin::addSpace(string descript);
+    bool Admin::rmSpace(string space);
+    array Admin::listSpaces();
     
-    bool Admin::server_register(string/Uint64 token, string host);
-    bool Admin::server_online(string/Uint64 token);
-    bool Admin::server_offline(string/Uint64 token);
-    bool Admin::server_forget(string/Uint64 token);
-    bool Admin::server_kill(string/Uint64 token);
+    bool Admin::serverRegister(string/Uint64 token, string host);
+    bool Admin::serverOnline(string/Uint64 token);
+    bool Admin::serverOffline(string/Uint64 token);
+    bool Admin::serverForget(string/Uint64 token);
+    bool Admin::serverKill(string/Uint64 token);
     
-    string Admin::error_message();
-    int    Admin::error_code();
+    string Admin::errorMessage();
+    int    Admin::errorCode();
     
     bool Admin::loop();
     
